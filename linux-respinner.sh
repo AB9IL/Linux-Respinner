@@ -15,19 +15,19 @@ Encoding=UTF-8
 # and new iso file for the respun distro
 
 # system username
-SYSUSER=mofo
+SYSUSER=winston
 
 # partition being used
-PART=data3
+PART=data1
 
 # working directory
-SYSDIR=mofo6
+SYSDIR=churchill
 
 # original iso file name
-ISONAME=mofolinux-latest
+ISONAME=mylinux-orig
 
 # respin iso file name
-NEWISO=mofolinux-latest
+NEWISO=mylinux-latest
 
 #----------DO NOT EDIT BELOW THIS LINE----------
 
