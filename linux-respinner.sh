@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 Encoding=UTF-8
 
 # Multifunction Linux Distro Respinner Script v0.10.
@@ -17,71 +17,41 @@ Encoding=UTF-8
 # system, or the paths will be incorrect.
 #
 # define variables:
+SYSUSER=winston # your username as builder of the respin
+CHROOTDNS='9.9.9.9' # dns while in the chroot
+SYSDIR=churchill  # working directory of the respin project
+ISONAME=respunlinux-orig # filename for the iso to be extracted
+ISOCONTENTS='extract-cd' # directory containing the extracted iso contents
+MBR_FILE=mbr.img # mbr from recent iso, (dd if="$ISONAME" bs=1 count=512 of=mbr.img)
+ISOINFO='RespunLinux - Release amd64 (20200330)' # data for the .disk/info file in the respun iso
+UBURELEASE=20.04 # Release Year.Month for Ubuntu distros
+UBUCODE=focal # Ubuntu codename
+MINTCODE=sonya # Mint codename
+NEWISO=respunlinux-latest # filename for the new iso
+DISTRONAME="Respun Linux" # plain language name for the respun distro
+DISTROURL="https://respunlinux.com" # url for the respin's web page
+FLAVOUR=Respunn #  /etc/casper.conf flavour in the respun distro
+HOST=pemmican #  /etc/casper.conf host in the respun distro
+USERNAME=user # /etc/casper.conf user in the respun distro
+VERSION=1b0 # version number of the respun distro
+ARCH='amd64'
 
-# SYSUSER: your username as builder of the respin
-SYSUSER=winston
-
-# CHROOTDNS: DNS to use during chroot operation
-CHROOTDNS='9.9.9.9'
-
-# PART: the partition where the respin project is located
-PART=data1
-
-# SYSDIR: the working directory of the respin project
-SYSDIR=churchill
-
-# ISONAME: the filename for the iso to be extracted
-ISONAME=respunlinux-orig
-
-# ISOINFO: data for the .disk/info file in the respun iso
-ISOINFO='RespunLinux - Release amd64 (20190215)'
-
-# UBURELEASE=Release Year.Month for Ubuntu distros
-UBURELEASE=18.04
-
-# UBUCODE=Ubuntu codename
-UBUCODE=bionic
-
-# MINTCODE=Mint codename
-MINTCODE=
-
-# NEWISO: filename for the new iso
-NEWISO=respunlinux-latest
-
-# DISTRONAME: plain language name for the respun distro
-DISTRONAME="Respun Linux"
-
-# DISTROURL: url for the respin's web page
-DISTROURL="https://respunlinux.com"
-
-# FLAVOUR: /etc/casper.conf flavour
-FLAVOUR=Respun
-
-# HOST: /etc/casper.conf host in the respun distro
-HOST=respun
-
-# USERNAME: /etc/casper.conf user in the respun distro
-USERNAME=user
-
-# VERSION: version number of the respun distro
-VERSION=0.8
-
-#--------------------DO NOT EDIT BELOW THIS LINE--------------------
+#DO NOT EDIT BELOW THIS LINE
+#---------------------------------------------------------------
 
 extract() {
 #apt update
-#apt install -y squashfs-tools genisoimage syslinux-utils
-cd /media/$SYSUSER/$PART/$SYSDIR
+#apt install -y squashfs-tools genisoimage syslinux-utils xorriso
 mkdir mnt
 mkdir utils
-mkdir extract-cd
-mount -o loop /media/$SYSUSER/$PART/$SYSDIR/$ISONAME.iso mnt
-rsync --exclude=/casper/filesystem.squashfs -a mnt/ extract-cd
-unsquashfs mnt/casper/filesystem.squashfs
+mkdir $ISOCONTENTS
+mount -o loop $ISONAME mnt
+rsync -avhc --inplace --no-whole-file --exclude=/casper/filesystem.squashfs  mnt/ $ISOCONTENTS
+unsquashfs -f mnt/casper/filesystem.squashfs
 mv squashfs-root edit
-#cp /sbin/initctl /media/$SYSUSER/$PART/$SYSDIR/utils/initctl
+#cp /sbin/initctl utils/initctl
 umount mnt
-rm -rf /media/$SYSUSER/$PART/$SYSDIR/mnt
+rm -rf mnt
 echo '#!/bin/sh
 Encoding=UTF-8
 
@@ -89,6 +59,7 @@ enter(){
 echo "Mounting directories..."
 mount -t proc none /proc
 mount -t sysfs none /sys
+mount -t dev none /dev
 mount -t devpts none /dev/pts
 export HOME=/root
 export LC_ALL=C
@@ -119,6 +90,7 @@ rm -f /etc/hosts
 rm /etc/machine-id
 umount /proc || umount -lf /proc
 umount /sys
+umount /dev
 umount /dev/pts
 echo "Exiting chroot..."
 exit
@@ -134,51 +106,105 @@ exit
      **)
  echo "Usage: $0 (enter|leave)"
      ;;
- esac' > /media/$SYSUSER/$PART/$SYSDIR/utils/chroot-manager
-chmod +x /media/$SYSUSER/$PART/$SYSDIR/utils/chroot-manager
-cp /media/$SYSUSER/$PART/$SYSDIR/utils/chroot-manager /media/$SYSUSER/$PART/$SYSDIR/edit/usr/sbin/chroot-manager
+ esac
+' > utils/chroot-manager
+chmod +x utils/chroot-manager
+cp utils/chroot-manager edit/usr/sbin/chroot-manager
+echo '#!/bin/bash
+
+kernel="$1"
+
+create(){
+# Create vmlinuz and initrd files for bootable hybrid livecds.
+echo "Creating files for kernel "$kernel"...
+This will take a few minutes."
+depmod -a -v -w $kernel
+update-initramfs -c -k $kernel ; sync
+#gzip -dc /boot/initrd.img-$kernel | lzma -7 > ~/initrd.lz
+cp /boot/initrd.img-$kernel ~/initrd
+cp /boot/vmlinuz-$kernel ~/vmlinuz
+rm -f /vmlinuz
+rm -f /initrd.img
+ln -s /boot/vmlinuz-$kernel /vmlinuz
+ln -s /boot/initrd.img-$kernel /initrd.img
+update-grub
+echo "Task finished; look in $HOME for the files."
+}
+
+case "$1" in
+	-h*|-H*)
+		if [[ "$2" -ne "0" || -z "$2" ]]; then
+			echo "usage: build-bootfiles <kernel>"
+			exit
+		fi
+	;;
+	*)
+		create
+	;;
+esac
+' > utils/build-bootfiles
+chmod +x utils/build-bootfiles
+cp utils/build-bootfiles edit/usr/sbin/build-bootfiles
 }
 
 enterchroot() {
 #get prerequisites
 echo '\nGetting prerequisites...'
-apt install -y squashfs-tools genisoimage syslinux-utils
-cd /media/$SYSUSER/$PART/$SYSDIR
+apt install -y squashfs-tools genisoimage syslinux-utils xorriso
 echo '\nBinding directories...'
-mount -o bind /run/ /media/$SYSUSER/$PART/$SYSDIR/edit/run
-mount --bind /dev /media/$SYSUSER/$PART/$SYSDIR/edit/dev
-mount --bind /proc /media/$SYSUSER/$PART/$SYSDIR/edit/proc
-cp /etc/hosts /media/$SYSUSER/$PART/$SYSDIR/edit/etc/hosts
-mkdir /media/$SYSUSER/$PART/$SYSDIR/edit/run/systemd/resolve
-echo 'nameserver '${CHROOTDNS}'' > /media/$SYSUSER/$PART/$SYSDIR/edit/run/systemd/resolve/stub-resolv.conf
+mount -o bind /run/ edit/run
+mount --bind /dev edit/dev
+mount --bind /proc edit/proc
+cp /etc/hosts edit/etc/hosts
+mkdir edit/run/systemd/resolve
+echo 'nameserver '${CHROOTDNS}'' > edit/run/systemd/resolve/resolv.conf
+echo 'nameserver '${CHROOTDNS}'' > edit/run/systemd/resolve/stub-resolv.conf
 echo '\nChrooting...'
-chroot /media/$SYSUSER/$PART/$SYSDIR/edit chroot-manager enter
-umount /media/$SYSUSER/$PART/$SYSDIR/edit/run
-umount /media/$SYSUSER/$PART/$SYSDIR/edit/proc
-umount /media/$SYSUSER/$PART/$SYSDIR/edit/dev
-rm -f /media/$SYSUSER/$PART/$SYSDIR/edit/etc/hosts
-rm -rf /media/$SYSUSER/$PART/$SYSDIR/edit/root/.[^.]*
-rm -rf /media/$SYSUSER/$PART/$SYSDIR/edit/tmp/.[^.]*
-rm -rf /media/$SYSUSER/$PART/$SYSDIR/edit/var/cache/apt/.[^.]*
-rm -rf /media/$SYSUSER/$PART/$SYSDIR/edit/var/cache/fontconfig/.[^.]*
-rm -rf /media/$SYSUSER/$PART/$SYSDIR/edit/var/lib/apt/lists/.[^.]*
-rm -rf /media/$SYSUSER/$PART/$SYSDIR/edit/etc/apt/*.save
-rm -rf /media/$SYSUSER/$PART/$SYSDIR/edit/etc/apt/sources.list.d/*.save
+chroot edit chroot-manager enter
+umount edit/run
+umount edit/proc
+umount edit/dev
+rm -f edit/etc/hosts
+rm -rf edit/root/.[^.]*
+rm -rf edit/run/systemd/resolve/.[^.]*
+rm -rf edit/tmp/.[^.]*
+rm -rf edit/var/cache/apt/.[^.]*
+rm -rf edit/var/cache/fontconfig/.[^.]*
+rm -rf edit/var/cache/man/.[^.]*
+rm -rf edit/var/lib/apt/lists/.[^.]*
+rm -rf edit/etc/apt/*.save
+rm -rf edit/etc/apt/sources.list.d/*.save
 }
 
 makedisk() {
+echo '\n Create '${NEWISO}'.iso!'
 echo '\n Jumping above root directory, moving files...\n'
 cleanup
-mkdir /media/$SYSUSER/$PART/$SYSDIR/edit/root/.config
-mkdir /media/$SYSUSER/$PART/$SYSDIR/edit/root/.config/dconf
-mkdir /media/$SYSUSER/$PART/$SYSDIR/edit/var/cache/apt/archives
-mkdir /media/$SYSUSER/$PART/$SYSDIR/edit/var/cache/apt/archives/partial
-touch /media/$SYSUSER/$PART/$SYSDIR/edit/var/cache/apt/archives/lock
-cp -f /media/$SYSUSER/$PART/$SYSDIR/utils/initctl /media/$SYSUSER/$PART/$SYSDIR/edit/sbin/initctl
-cp -f /media/$SYSUSER/$PART/$SYSDIR/utils/.bashrc /media/$SYSUSER/$PART/$SYSDIR/edit/root/.bashrc
-cp -f /media/$SYSUSER/$PART/$SYSDIR/utils/.bashrc /media/$SYSUSER/$PART/$SYSDIR/edit/etc/skel/.bashrc
-cp -f /media/$SYSUSER/$PART/$SYSDIR/utils/user /media/$SYSUSER/$PART/$SYSDIR/edit/root/.config/dconf/user
-cp -f /media/$SYSUSER/$PART/$SYSDIR/utils/user /media/$SYSUSER/$PART/$SYSDIR/edit/etc/skel/.config/dconf/user
+mkdir edit/root/.config
+mkdir edit/root/.config/dconf
+mkdir edit/var/cache/apt/archives
+mkdir edit/var/cache/apt/archives/partial
+mkdir edit/var/cache/apt/archives/lightdm
+mkdir edit/var/cache/apt/archives/lightdm/dmrc
+touch edit/var/cache/apt/archives/lock
+cp -f utils/initctl edit/sbin/initctl
+cp -f utils/.bashrc edit/etc/skel/.bashrc
+cp -f edit/etc/skel/.bashrc edit/root/.bashrc
+cp -f utils/user edit/etc/skel/.config/dconf/user
+cp -f edit/etc/skel/.config/dconf/user edit/root/.config/dconf/user
+cp -f utils/.Xresources edit/etc/skel/.Xresources
+cp -f edit/etc/skel/.Xresources edit/root/.Xresources
+cp -f utils/.nanorc edit/etc/skel/.nanorc
+cp -f edit/etc/skel/.nanorc edit/root/.nanorc
+cp -f utils/.wgetrc edit/etc/skel/.wgetrc
+cp -f edit/etc/skel/.wgetrc edit/root/.wgetrc
+cp -f utils/.inputrc edit/etc/skel/.inputrc
+cp -f edit/etc/skel/.inputrc edit/root/.inputrc
+rsync -avhc --inplace --no-whole-file --delete utils/nvim/ edit/root/.config/nvim/
+rsync -avhc --inplace --no-whole-file --delete utils/nvim/ edit/etc/skel/.config/nvim/
+rsync -avhc --inplace --no-whole-file --delete utils/.mozilla/ edit/etc/skel/.mozilla/
+rsync -avhc --inplace --no-whole-file --delete utils/.local/ edit/root/.local/
+rsync -avhc --inplace --no-whole-file --delete utils/.local/ edit/etc/skel/.local/
 
 #set distro identity
 echo '# This file should go in /etc/casper.conf
@@ -194,16 +220,16 @@ export BUILD_SYSTEM="Ubuntu"
 # flavour string acquired at boot time, unless you set FLAVOUR to any
 # non-empty string.
 
-export FLAVOUR="'${FLAVOUR}'"' > /media/$SYSUSER/$PART/$SYSDIR/edit/etc/casper.conf
+export FLAVOUR="'${FLAVOUR}'"' > edit/etc/casper.conf
 
-echo ${DISTRONAME}' '${VERSION}' \\n \l' > /media/$SYSUSER/$PART/$SYSDIR/edit/etc/issue
+echo ${DISTRONAME}' '${VERSION}' \\n \l' > edit/etc/issue
 
-echo ${DISTRONAME}' '${VERSION} > /media/$SYSUSER/$PART/$SYSDIR/edit/etc/issue.net
+echo ${DISTRONAME}' '${VERSION} > edit/etc/issue.net
 
 echo 'DISTRIB_ID=Ubuntu
 DISTRIB_RELEASE="'${UBURELEASE}'"
 DISTRIB_CODENAME="'${UBUCODE}'"
-DISTRIB_DESCRIPTION="'${DISTRONAME}' '${VERSION}'"' > /media/$SYSUSER/$PART/$SYSDIR/edit/etc/lsb-release
+DISTRIB_DESCRIPTION="'${DISTRONAME}' '${VERSION}'"' > edit/etc/lsb-release
 
 echo '
 The programs included with the '${DISTRONAME}' system are free software;
@@ -212,7 +238,7 @@ individual files in /usr/share/doc/*/copyright.
 
 '${DISTRONAME}' comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
 applicable law.
-' > /media/$SYSUSER/$PART/$SYSDIR/edit/etc/legal
+' > edit/etc/legal
 
 echo 'NAME="'${DISTRONAME}'"
 VERSION="'${VERSION}'"
@@ -225,7 +251,7 @@ SUPPORT_URL="'${DISTROURL}'"
 BUG_REPORT_URL="'${DISTROURL}'"
 PRIVACY_POLICY_URL="'${DISTROURL}'"
 VERSION_CODENAME="'${UBUCODE}'"
-UBUNTU_CODENAME="'${UBUCODE}'"' > /media/$SYSUSER/$PART/$SYSDIR/edit/usr/lib/os-release
+UBUNTU_CODENAME="'${UBUCODE}'"' > edit/usr/lib/os-release
 
 echo '#!/bin/sh
 #
@@ -249,8 +275,8 @@ echo '#!/bin/sh
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-printf "\n * Support:  '${DISTROURL}'\n"' > /media/$SYSUSER/$PART/$SYSDIR/edit/etc/update-motd.d/10-help-text
-chmod +x /media/$SYSUSER/$PART/$SYSDIR/edit/etc/update-motd.d/10-help-text
+printf "\n * Support:  '${DISTROURL}'\n"' > edit/etc/update-motd.d/10-help-text
+chmod +x edit/etc/update-motd.d/10-help-text
 
 echo '#define DISKNAME  '${DISTRONAME}' '${VERSION}'
 #define TYPE  binary
@@ -260,40 +286,70 @@ echo '#define DISKNAME  '${DISTRONAME}' '${VERSION}'
 #define DISKNUM  1
 #define DISKNUM1  1
 #define TOTALNUM  0
-#define TOTALNUM0  1' > /media/$SYSUSER/$PART/$SYSDIR/extract-cd/README.diskdefines
+#define TOTALNUM0  1' > $ISOCONTENTS/README.diskdefines
 
-echo ${ISOINFO} > /media/$SYSUSER/$PART/$SYSDIR/extract-cd/.disk/info
+echo ${ISOINFO} > $ISOCONTENTS/.disk/info
 
-echo ${DISTROURL} > /media/$SYSUSER/$PART/$SYSDIR/extract-cd/.disk/release_notes_url
+echo ${DISTROURL} > $ISOCONTENTS/.disk/release_notes_url
 
 #regenerate manifest
 echo '\n Regenerating manifest...'
-chmod +w extract-cd/casper/filesystem.manifest
-chroot edit dpkg-query -W --showformat='${Package} ${Version}\n' | tee extract-cd/casper/filesystem.manifest
-cp extract-cd/casper/filesystem.manifest extract-cd/casper/filesystem.manifest-desktop
-sed -i '/ubiquity/d' extract-cd/casper/filesystem.manifest-desktop
-sed -i '/casper/d' extract-cd/casper/filesystem.manifest-desktop
+chmod +w $ISOCONTENTS/casper/filesystem.manifest
+chroot edit dpkg-query -W --showformat='${Package} ${Version}\n' | \
+tee $ISOCONTENTS/casper/filesystem.manifest $NEWISO-build.log
+cp $ISOCONTENTS/casper/filesystem.manifest $ISOCONTENTS/casper/filesystem.manifest-desktop
+sed -i '/ubiquity/d' $ISOCONTENTS/casper/filesystem.manifest-desktop
+sed -i '/casper/d' $ISOCONTENTS/casper/filesystem.manifest-desktop
+sed -i '/discover/d' $ISOCONTENTS/casper/filesystem.manifest-desktop
+sed -i '/laptop-detect/d' $ISOCONTENTS/casper/filesystem.manifest-desktop
+sed -i '/os-prober/d' $ISOCONTENTS/casper/filesystem.manifest-desktop
 
 #compress filesystem
 echo '\n Compressing filesystem...\n'
-rm extract-cd/casper/filesystem.squashfs
-mksquashfs edit extract-cd/casper/filesystem.squashfs -comp xz
-printf $(du -sx --block-size=1 edit | cut -f1) | tee extract-cd/casper/filesystem.size
+rm $ISOCONTENTS/casper/filesystem.squashfs
+mksquashfs edit $ISOCONTENTS/casper/filesystem.squashfs -comp xz
+printf $(du -sx --block-size=1 edit | cut -f1) | tee $ISOCONTENTS/casper/filesystem.size
 
 #update md5sums
 echo '\n Updating md5 sums...'
-cd extract-cd
-rm md5sum.txt
-find -type f -print0 | xargs -0 md5sum | grep -v isolinux/boot.cat | tee md5sum.txt
+rm $ISOCONTENTS/md5sum.txt
+find $ISOCONTENTS -type f -print0 | xargs -0 md5sum | grep -v $ISOCONTENTS/isolinux/boot.cat | \
+tee $ISOCONTENTS/md5sum.txt
+
+#remove the old iso file
+rm -f $NEWISO.iso
 
 #create iso image
-echo '\n Creating the iso...'
-mkisofs -input-charset utf-8 -U -A $NEWISO -V $NEWISO -volset $NEWISO -J -joliet-long -r -v -T -o ../$NEWISO.iso -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/grub/efi.img -no-emul-boot .
+echo '\n Creating '${NEWISO}'.iso...'
+cd $ISOCONTENTS
+# do not change the order of the xorriso options
+# do not remove repeated xorriso options
+xorrisofs -v \
+	-J -J -joliet-long \
+	-full-iso9660-filenames \
+	-input-charset utf-8 \
+	-rational-rock \
+	-volset "$FLAVOUR$VERSION-$ARCH" \
+	-volid "$FLAVOUR$VERSION-$ARCH" \
+	-o ../$NEWISO.iso \
+	-isohybrid-mbr ../utils/$MBR_FILE \
+	-eltorito-boot isolinux/isolinux.bin \
+	-eltorito-catalog isolinux/boot.cat \
+	-no-emul-boot \
+	-boot-load-size 4 \
+	-boot-info-table \
+	-eltorito-alt-boot \
+	-e boot/grub/efi.img \
+	-no-emul-boot \
+	-isohybrid-gpt-basdat \
+	.
 cd ../
-isohybrid $NEWISO.iso
-echo '\n Computing the SHA256 sum for the iso file...'
-echo 'sha256sum: ' > $NEWISO-sha256sum.txt
-sha256sum $NEWISO.iso >> $NEWISO-sha256sum.txt
+echo '\n Computing the SHA256 sum:' | tee $NEWISO-build.log 2>&1
+sha256sum $NEWISO.iso | tee -a $NEWISO-build.log 2>&1
+echo '\n Boot record information:'
+fdisk -lu $NEWISO.iso | tee -a $NEWISO-build.log 2>&1
+echo 'Boot catalog and image paths:'
+xorriso -indev $NEWISO.iso -toc -pvd_info | tee -a $NEWISO-build.log 2>&1
 echo '\n iso creation finished'
 }
 
@@ -304,83 +360,125 @@ cd initrd-rebuild
 #gzip -dc ../initrd.gz | cpio -id
 
 #For initrd.gz in the iso file
-#gzip -dc ../extract-cd/casper/initrd.gz | cpio -id
+#gzip -dc ../$ISOCONTENTS/casper/initrd.gz | cpio -id
 
 #For initrd.lz in the iso file
-lzma -dc -S .lz ../extract-cd/casper/initrd.lz | cpio -id
+lzma -dc -S .lz ../$ISOCONTENTS/casper/initrd.lz | cpio -id
+cd ../
 }
 
 repackinitrd() {
 cd initrd-rebuild
-find . | cpio --quiet --dereference -o -H newc | lzma -7 > ../extract-cd/casper/initrd-new.lz
+find . | cpio --quiet --dereference -o -H newc | lzma -7 > ../$ISOCONTENTS/casper/initrd-new.lz
+cd ../
 }
 
 cleanup() {
 echo '\n Setting permissions, cleaning up...\n'
-umount /media/$SYSUSER/$PART/$SYSDIR/edit/dev
-find /media/$SYSUSER/$PART/$SYSDIR/extract-cd/isolinux -type f -exec chmod 644 {} \;
-find /media/$SYSUSER/$PART/$SYSDIR/edit/etc/apt/sources.list.d -name "*.save" -type f -exec rm -f {} \;
-find /media/$SYSUSER/$PART/$SYSDIR/edit/home -type f -exec rm -f {} \;
-find /media/$SYSUSER/$PART/$SYSDIR/edit/root -type f -exec rm -f {} \;
-find /media/$SYSUSER/$PART/$SYSDIR/edit/tmp -type f -exec rm -f {} \;
-find /media/$SYSUSER/$PART/$SYSDIR/edit/var/crash -type f -exec rm -f {} \;
-find /media/$SYSUSER/$PART/$SYSDIR/edit/var/lib/apt -type f -exec rm -f {} \;
-find /media/$SYSUSER/$PART/$SYSDIR/edit/var/log -type f -exec rm -f {} \;
-find /media/$SYSUSER/$PART/$SYSDIR/edit/var/tmp -type f -exec rm -f {} \;
-find /media/$SYSUSER/$PART/$SYSDIR/edit/usr/local -name "*.py[co]" -o -name __pycache__ -exec rm -rf {} \;
-cd /media/$SYSUSER/$PART/$SYSDIR
+umount edit/dev
+chown -R man:root edit/var/cache/man
+find edit/usr/local -name "*.txt" -exec chmod 666 {} \;
+find edit/usr/local -name "*.conf" -exec chmod 666 {} \;
+find edit/usr/local -name "*.db" -exec chmod 666 {} \;
+find edit/usr/local -name "*.md" -exec chmod 666 {} \;
+find edit/usr/local -name "*.html" -exec chmod 666 {} \;
+find edit/usr/local/sbin -name "*.py" -exec chmod 755 {} \;
+find edit/usr/local/sbin -name "*.sh" -exec chmod 755 {} \;
+find edit/usr/local/etc -type f -exec chmod 666 {} \;
+find edit/var/cache -name "*.db" -exec chmod 664 {} \;
+find edit/var/cache -name "*.TAG" -exec chmod 664 {} \;
+find edit/var/log -type d -exec chmod 755 {} \;
+find $ISOCONTENTS/isolinux -type f -exec chmod 644 {} \;
+find edit/etc/apt/sources.list.d -name "*.save" -type f -exec rm -f {} \;
+find edit/home -type f -exec rm -f {} \;
+find edit/root -type f -exec rm -f {} \;
+find edit/tmp -type f -exec rm -f {} \;
+find edit/var/crash -type f -exec rm -f {} \;
+find edit/var/lib/apt -type f -exec rm -f {} \;
+find edit/var/log -type f -exec rm -f {} \;
+find edit/var/tmp -type f -exec rm -f {} \;
+find edit/usr/local -name "*.py[co]" -o -name __pycache__ -exec rm -rf {} \;
+find edit/opt -name "*.py[co]" -o -name __pycache__ -exec rm -rf {} \;
+find $ISOCONTENTS -name "TRANS.TBL" -exec rm -rf {} \;
+chmod 4755 edit/usr/bin/pkexec
+chmod 4755 edit/usr/bin/sudo
+chown root:messagebus edit/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+chmod u+s edit/usr/lib/dbus-1.0/dbus-daemon-launch-helper
 }
 
-syncfolders() {
+syncHTML() {
 # rsync the html folder
-rsync -av --delete /usr/local/share/html/ /media/$SYSUSER/$PART/$SYSDIR/edit/usr/local/share/html/
+rsync -avhc --inplace --no-whole-file --delete /usr/local/share/html/ utils/html/
+chown -R root:root utils/html
+rsync -avhc --inplace --no-whole-file --delete utils/html/ backup/usr/local/share/html/
+}
 
+syncMozilla() {
 # rsync the mozilla folder (firefox)
 rm -rf /home/$SYSUSER/.mozilla/firefox/bookmarkbackups/.[^.]*
 rm -rf /home/$SYSUSER/.mozilla/firefox/*.default/storage/{default,permanent,temporary}
-rsync -av --delete /home/$SYSUSER/.mozilla/ /media/$SYSUSER/$PART/$SYSDIR/edit/etc/skel/.mozilla/
+rsync -avhc --inplace --no-whole-file --delete /home/$SYSUSER/.mozilla/ utils/.mozilla/
+chown -R root:root utils/.mozilla
+rsync -avhc --inplace --no-whole-file --delete utils/.mozilla/ backup/etc/skel/.mozilla/
+}
+
+makebackup(){
+echo '\n Copying '${NEWISO}'.iso to '${NEWISO}'.bak.iso...\n'
+cp -fp $NEWISO.iso $NEWISO.bak.iso
+echo 'Backup job complete...'
 }
 
 copydconf(){
-yes | cp -f /home/$SYSUSER/.config/dconf/user /media/$SYSUSER/$PART/$SYSDIR/utils/user
+yes | cp -f /home/$SYSUSER/.config/dconf/user utils/user
 }
 
-ans=$(zenity  --list --height 340 --width 470 --text "LiveCD Respinner Script" \
---radiolist  --column "Pick" --column "Action" TRUE "Do Nothing" \
-FALSE "Extract Isofile Contents" \
-FALSE "Enter the Chroot Environment" \
-FALSE "Create New Iso File" \
-FALSE "Extract Initrd Contents" \
-FALSE "Repack Initrd Contents" \
-FALSE "Sync Mozilla and HTML folders" \
-FALSE "Sync current dconf/user file" \
-FALSE "Distro Cleanup Actions" );
 
-	if [  "$ans" = "Do Nothing" ]; then
-		exit
-
-	elif [  "$ans" = "Extract Isofile Contents" ]; then
-		extract
-
-	elif [  "$ans" = "Enter the Chroot Environment" ]; then
+case "$1" in
+	chroot)
 		enterchroot
-
-	elif [  "$ans" = "Create New Iso File" ]; then
+	;;
+	makedisk)
 		makedisk
-
-	elif [  "$ans" = "Extract Initrd Contents" ]; then
+	;;
+	backup)
+		makebackup
+	;;
+	extractiso)
+		extract
+	;;
+	extractinit)
 		extractinitrd
-
-	elif [  "$ans" = "Repack Initrd Contents" ]; then
+	;;
+	repackinit)
 		repackinitrd
-
-	elif [  "$ans" = "Sync Mozilla and HTML folders" ]; then
-		syncfolders
-
-	elif [  "$ans" = "Sync current dconf settings" ]; then
+	;;
+	syncmozilla)
+		syncMozilla
+	;;
+	synchtml)
+		syncHTML
+	;;
+	syncdconf)
 		copydconf
-
-	elif [  "$ans" = "Distro Cleanup Actions" ]; then
+	;;
+	cleanup)
 		cleanup
+	;;
+  *)
+	echo "Usage: multifunction.sh <command>
 
-	fi
+			chroot		Enter a chroot environment
+			makedisk	Create a new iso file based on edited filesystem
+			backup		Create a backup of the iso file
+			extractiso	Extract filesystem from iso file
+			extractinit	Extract contents of initrd file
+			repackinit	Rebuild initrd from extracted contents
+			syncmozilla	sync the iso Mozilla directory to live system
+			synchtml	sync the iso /usr/local/share/html to live system
+			syncdconf	sync the iso dconf to live system
+			cleanup		clean cruft and set permissions in the iso filesystem
+
+" >&2
+	exit 3
+	;;
+esac
