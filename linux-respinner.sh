@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 Encoding=UTF-8
 
 # Multifunction Linux Distro Respinner Script v0.10.
@@ -17,20 +17,20 @@ Encoding=UTF-8
 # system, or the paths will be incorrect.
 #
 # define variables:
-SYSUSER=winston # your username as builder of the respin
+SYSUSER=$(whoami) # your username as builder of the respin
 CHROOTDNS='9.9.9.9' # dns while in the chroot
-SYSDIR=churchill  # working directory of the respin project
-ISONAME=respunlinux-orig # filename for the iso to be extracted
+SYSDIR=pemmican  # working directory of the respin project
+ISONAME=pemmican-latest # filename for the iso to be extracted
 ISOCONTENTS='extract-cd' # directory containing the extracted iso contents
 MBR_FILE=mbr.img # mbr from recent iso, (dd if="$ISONAME" bs=1 count=512 of=mbr.img)
-ISOINFO='RespunLinux - Release amd64 (20200330)' # data for the .disk/info file in the respun iso
-UBURELEASE=20.04 # Release Year.Month for Ubuntu distros
-UBUCODE=focal # Ubuntu codename
-MINTCODE=sonya # Mint codename
-NEWISO=respunlinux-latest # filename for the new iso
-DISTRONAME="Respun Linux" # plain language name for the respun distro
-DISTROURL="https://respunlinux.com" # url for the respin's web page
-FLAVOUR=Respunn #  /etc/casper.conf flavour in the respun distro
+ISOINFO='Pemmican Linux 1.0 - Release amd64 (20200330)' # data for the .disk/info file in the respun iso
+UBURELEASE=16.04 # Release Year.Month for Ubuntu distros
+UBUCODE=xenial # Ububtu codename
+MINTCODE=sylvia # Mint codename
+NEWISO=pemmican-latest # filename for the new iso
+DISTRONAME="Pemmican Linux" # plain language name for the respun distro
+DISTROURL="https://pemmicanlinux.com" # url for the respin's web page
+FLAVOUR=Pemmican #  /etc/casper.conf flavour in the respun distro
 HOST=pemmican #  /etc/casper.conf host in the respun distro
 USERNAME=user # /etc/casper.conf user in the respun distro
 VERSION=1b0 # version number of the respun distro
@@ -182,6 +182,8 @@ echo '\n Jumping above root directory, moving files...\n'
 cleanup
 mkdir edit/root/.config
 mkdir edit/root/.config/dconf
+mkdir edit/root/.config/compton
+mkdir edit/root/.config/i3
 mkdir edit/var/cache/apt/archives
 mkdir edit/var/cache/apt/archives/partial
 mkdir edit/var/cache/apt/archives/lightdm
@@ -200,11 +202,16 @@ cp -f utils/.wgetrc edit/etc/skel/.wgetrc
 cp -f edit/etc/skel/.wgetrc edit/root/.wgetrc
 cp -f utils/.inputrc edit/etc/skel/.inputrc
 cp -f edit/etc/skel/.inputrc edit/root/.inputrc
+cp -f edit/etc/skel/.fzf.bash edit/root/.fzf.bash
+cp -f edit/etc/skel/.tmux.conf edit/root/.tmux.conf
 rsync -avhc --inplace --no-whole-file --delete utils/nvim/ edit/root/.config/nvim/
 rsync -avhc --inplace --no-whole-file --delete utils/nvim/ edit/etc/skel/.config/nvim/
 rsync -avhc --inplace --no-whole-file --delete utils/.mozilla/ edit/etc/skel/.mozilla/
 rsync -avhc --inplace --no-whole-file --delete utils/.local/ edit/root/.local/
 rsync -avhc --inplace --no-whole-file --delete utils/.local/ edit/etc/skel/.local/
+rsync -avhc --inplace --no-whole-file --delete edit/etc/skel/.tmux/ edit/root/.tmux/
+rsync -avhc --inplace --no-whole-file --delete edit/etc/skel/.config/ edit/root/.config/compton/
+rsync -avhc --inplace --no-whole-file --delete edit/etc/skel/.config/ edit/root/.config/i3/
 
 #set distro identity
 echo '# This file should go in /etc/casper.conf
@@ -226,9 +233,9 @@ echo ${DISTRONAME}' '${VERSION}' \\n \l' > edit/etc/issue
 
 echo ${DISTRONAME}' '${VERSION} > edit/etc/issue.net
 
-echo 'DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE="'${UBURELEASE}'"
-DISTRIB_CODENAME="'${UBUCODE}'"
+echo 'DISTRIB_ID='${DISTRIBID}'
+DISTRIB_RELEASE='${DISTRIBRELEASE}'
+DISTRIB_CODENAME='${DISTRIBCODE}'
 DISTRIB_DESCRIPTION="'${DISTRONAME}' '${VERSION}'"' > edit/etc/lsb-release
 
 echo '
@@ -308,15 +315,20 @@ sed -i '/os-prober/d' $ISOCONTENTS/casper/filesystem.manifest-desktop
 echo '\n Compressing filesystem...\n'
 rm $ISOCONTENTS/casper/filesystem.squashfs
 mksquashfs edit $ISOCONTENTS/casper/filesystem.squashfs -comp xz
-printf $(du -sx --block-size=1 edit | cut -f1) | tee $ISOCONTENTS/casper/filesystem.size
+printf $(du -sx --block-size=1 edit | cut -f1) | \
+tee $ISOCONTENTS/casper/filesystem.size
 
 #update md5sums
+#filename MD5SUMS for linux Mint, md5sum.txt for Ubuntu derivatives
+cd $ISOCONTENTS
 echo '\n Updating md5 sums...'
-rm $ISOCONTENTS/md5sum.txt
-find $ISOCONTENTS -type f -print0 | xargs -0 md5sum | grep -v $ISOCONTENTS/isolinux/boot.cat | \
-tee $ISOCONTENTS/md5sum.txt
+rm md5sum.txt
+find -type f -print0 | xargs -0 md5sum | grep -v isolinux/boot.cat | \
+tee md5sum.txt ../$NEWISO-build.log 2>&1
+cd ../
 
 #remove the old iso file
+echo '\n If exists, delete the old '${NEWISO}'.iso...'
 rm -f $NEWISO.iso
 
 #create iso image
@@ -350,7 +362,7 @@ echo '\n Boot record information:'
 fdisk -lu $NEWISO.iso | tee -a $NEWISO-build.log 2>&1
 echo 'Boot catalog and image paths:'
 xorriso -indev $NEWISO.iso -toc -pvd_info | tee -a $NEWISO-build.log 2>&1
-echo '\n iso creation finished'
+echo '\n '${NEWISO}' creation finished'
 }
 
 extractinitrd() {
@@ -400,10 +412,13 @@ find edit/var/tmp -type f -exec rm -f {} \;
 find edit/usr/local -name "*.py[co]" -o -name __pycache__ -exec rm -rf {} \;
 find edit/opt -name "*.py[co]" -o -name __pycache__ -exec rm -rf {} \;
 find $ISOCONTENTS -name "TRANS.TBL" -exec rm -rf {} \;
+find edit -name "*.dpkg-old" -exec rm -rf {} \;
+find edit -name "*.dpkg-dist" -exec rm -rf {} \;
 chmod 4755 edit/usr/bin/pkexec
 chmod 4755 edit/usr/bin/sudo
 chown root:messagebus edit/usr/lib/dbus-1.0/dbus-daemon-launch-helper
 chmod u+s edit/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+rmdir edit/tmp/*
 }
 
 syncHTML() {
