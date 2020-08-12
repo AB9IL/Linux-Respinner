@@ -42,6 +42,7 @@ ARCH='amd64'
 extract() {
 #apt update
 #apt install -y squashfs-tools genisoimage syslinux-utils xorriso
+mkdir backup
 mkdir mnt
 mkdir utils
 mkdir $ISOCONTENTS
@@ -422,19 +423,27 @@ rmdir edit/tmp/*
 }
 
 syncHTML() {
-# rsync the html folder
+# rsync the html folder (READMEs and info for the distro users)
 rsync -avhc --inplace --no-whole-file --delete /usr/local/share/html/ utils/html/
 chown -R root:root utils/html
 rsync -avhc --inplace --no-whole-file --delete utils/html/ backup/usr/local/share/html/
 }
 
 syncMozilla() {
-# rsync the mozilla folder (firefox)
+# rsync the mozilla folder (Firefox)
 rm -rf /home/$SYSUSER/.mozilla/firefox/bookmarkbackups/.[^.]*
 rm -rf /home/$SYSUSER/.mozilla/firefox/*.default/storage/{default,permanent,temporary}
 rsync -avhc --inplace --no-whole-file --delete /home/$SYSUSER/.mozilla/ utils/.mozilla/
 chown -R root:root utils/.mozilla
 rsync -avhc --inplace --no-whole-file --delete utils/.mozilla/ backup/etc/skel/.mozilla/
+}
+
+syncNeovim() {
+# rsync the nvim folder (Neovim)
+rm -rf /home/$SYSUSER/.config/nvim/yankring_history*.txt
+rsync -avhc --inplace --no-whole-file --delete /home/$SYSUSER/.config/nvim/ utils/nvim/
+chown -R root:root utils/nvim
+rsync -avhc --inplace --no-whole-file --delete utils/nvim/ backup/etc/skel/.config/nvim/
 }
 
 makebackup(){
@@ -470,6 +479,9 @@ case "$1" in
 	syncmozilla)
 		syncMozilla
 	;;
+	syncnvim)
+		syncNeovim
+	;;
 	synchtml)
 		syncHTML
 	;;
@@ -489,6 +501,7 @@ case "$1" in
 			extractinit	Extract contents of initrd file
 			repackinit	Rebuild initrd from extracted contents
 			syncmozilla	sync the iso Mozilla directory to live system
+			syncnvim	sync the iso Neovim directory to the live system
 			synchtml	sync the iso /usr/local/share/html to live system
 			syncdconf	sync the iso dconf to live system
 			cleanup		clean cruft and set permissions in the iso filesystem
