@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 Encoding=UTF-8
 
 # Multifunction Linux Distro Respinner Script v0.10.
@@ -42,7 +42,6 @@ ARCH='amd64'
 extract() {
 #apt update
 #apt install -y squashfs-tools genisoimage syslinux-utils xorriso
-mkdir backup
 mkdir mnt
 mkdir utils
 mkdir $ISOCONTENTS
@@ -75,8 +74,6 @@ leave
 
 leave(){
 echo "Cleaning up before chroot exit..."
-apt autoremove --purge
-apt clean
 rm /var/lib/dbus/machine-id
 rm /sbin/initctl
 dpkg-divert --rename --remove /sbin/initctl
@@ -89,6 +86,8 @@ rm -rf /tmp/.[^.]*
 rm -rf /var/tmp/.[^.]*
 rm -f /etc/hosts
 rm /etc/machine-id
+apt autoremove --purge
+apt clean
 umount /proc || umount -lf /proc
 umount /sys
 umount /dev
@@ -181,14 +180,8 @@ makedisk() {
 echo '\n Create '${NEWISO}'.iso!'
 echo '\n Jumping above root directory, moving files...\n'
 cleanup
-mkdir edit/root/.config
-mkdir edit/root/.config/dconf
-mkdir edit/root/.config/compton
-mkdir edit/root/.config/i3
-mkdir edit/var/cache/apt/archives
-mkdir edit/var/cache/apt/archives/partial
-mkdir edit/var/cache/apt/archives/lightdm
-mkdir edit/var/cache/apt/archives/lightdm/dmrc
+mkdir -p edit/root/.config/{dconf,compton,i3}
+mkdir -p edit/var/cache/apt/{archives,partial,lightdm/dmrc}
 touch edit/var/cache/apt/archives/lock
 cp -f utils/initctl edit/sbin/initctl
 cp -f utils/.bashrc edit/etc/skel/.bashrc
@@ -205,14 +198,12 @@ cp -f utils/.inputrc edit/etc/skel/.inputrc
 cp -f edit/etc/skel/.inputrc edit/root/.inputrc
 cp -f edit/etc/skel/.fzf.bash edit/root/.fzf.bash
 cp -f edit/etc/skel/.tmux.conf edit/root/.tmux.conf
-rsync -avhc --inplace --no-whole-file --delete utils/nvim/ edit/root/.config/nvim/
+rsync -avhc --inplace --no-whole-file --delete utils/nvim-root/ edit/root/.config/nvim/
 rsync -avhc --inplace --no-whole-file --delete utils/nvim/ edit/etc/skel/.config/nvim/
 rsync -avhc --inplace --no-whole-file --delete utils/.mozilla/ edit/etc/skel/.mozilla/
 rsync -avhc --inplace --no-whole-file --delete utils/.local/ edit/root/.local/
 rsync -avhc --inplace --no-whole-file --delete utils/.local/ edit/etc/skel/.local/
 rsync -avhc --inplace --no-whole-file --delete edit/etc/skel/.tmux/ edit/root/.tmux/
-rsync -avhc --inplace --no-whole-file --delete edit/etc/skel/.config/ edit/root/.config/compton/
-rsync -avhc --inplace --no-whole-file --delete edit/etc/skel/.config/ edit/root/.config/i3/
 
 #set distro identity
 echo '# This file should go in /etc/casper.conf
@@ -248,6 +239,7 @@ individual files in /usr/share/doc/*/copyright.
 applicable law.
 ' > edit/etc/legal
 
+# VERSION_CODENAME must be either MINTCODE or UBUCODE
 echo 'NAME="'${DISTRONAME}'"
 VERSION="'${VERSION}'"
 ID=ubuntu
@@ -390,40 +382,46 @@ cleanup() {
 echo '\n Setting permissions, cleaning up...\n'
 umount edit/dev
 chown -R man:root edit/var/cache/man
-find edit/usr/local -name "*.txt" -exec chmod 666 {} \;
-find edit/usr/local -name "*.conf" -exec chmod 666 {} \;
-find edit/usr/local -name "*.db" -exec chmod 666 {} \;
-find edit/usr/local -name "*.md" -exec chmod 666 {} \;
-find edit/usr/local -name "*.html" -exec chmod 666 {} \;
-find edit/usr/local/sbin -name "*.py" -exec chmod 755 {} \;
-find edit/usr/local/sbin -name "*.sh" -exec chmod 755 {} \;
+find edit/usr/local -iname "*.txt" -exec chmod 666 {} \;
+find edit/usr/local -iname "*.conf" -exec chmod 666 {} \;
+find edit/usr/local -iname "*.db" -exec chmod 666 {} \;
+find edit/usr/local -iname "*.md" -exec chmod 666 {} \;
+find edit/usr/local -iname "*.html" -exec chmod 666 {} \;
+find edit/usr/local/sbin -iname "*.py" -exec chmod 755 {} \;
+find edit/usr/local/sbin -iname "*.sh" -exec chmod 755 {} \;
 find edit/usr/local/etc -type f -exec chmod 666 {} \;
-find edit/var/cache -name "*.db" -exec chmod 664 {} \;
-find edit/var/cache -name "*.TAG" -exec chmod 664 {} \;
+find edit/var/cache -iname "*.db" -exec chmod 664 {} \;
+find edit/var/cache -iname "*.TAG" -exec chmod 664 {} \;
 find edit/var/log -type d -exec chmod 755 {} \;
 find $ISOCONTENTS/isolinux -type f -exec chmod 644 {} \;
-find edit/etc/apt/sources.list.d -name "*.save" -type f -exec rm -f {} \;
-find edit/home -type f -exec rm -f {} \;
-find edit/root -type f -exec rm -f {} \;
-find edit/tmp -type f -exec rm -f {} \;
-find edit/var/crash -type f -exec rm -f {} \;
-find edit/var/lib/apt -type f -exec rm -f {} \;
-find edit/var/log -type f -exec rm -f {} \;
-find edit/var/tmp -type f -exec rm -f {} \;
-find edit/usr/local -name "*.py[co]" -o -name __pycache__ -exec rm -rf {} \;
-find edit/opt -name "*.py[co]" -o -name __pycache__ -exec rm -rf {} \;
-find $ISOCONTENTS -name "TRANS.TBL" -exec rm -rf {} \;
-find edit -name "*.dpkg-old" -exec rm -rf {} \;
-find edit -name "*.dpkg-dist" -exec rm -rf {} \;
+find edit/etc/apt/sources.list.d -type f -name "*.save" -delete
+find edit/home -type f -delete
+find edit/root -type f -delete
+find edit/tmp -type f -delete
+find edit/var/crash -type f -delete
+find edit/var/lib/apt -type f -delete
+find edit/var/log -type f -delete
+find edit/var/tmp -type f -delete
+find edit/usr -type f -iname "*.py[co]" -delete
+find edit/opt -type f -iname "*.py[co]" -delete
+find utils -type f -iname "*.py[co]" -delete
+find edit/usr -type d -iname "__pycache__" -exec rm -r {} \;
+find edit/opt -type d -iname "__pycache__" -exec rm -r {} \;
+find utils -type d -iname "__pycache__" -exec rm -r {} \;
+find $ISOCONTENTS -type f -iname "TRANS.TBL" -delete
+find edit -type f -iname "*.dpkg-old" -delete
+find edit -type f -iname "*.dpkg-dist" -delete
 chmod 4755 edit/usr/bin/pkexec
 chmod 4755 edit/usr/bin/sudo
 chown root:messagebus edit/usr/lib/dbus-1.0/dbus-daemon-launch-helper
 chmod u+s edit/usr/lib/dbus-1.0/dbus-daemon-launch-helper
 rmdir edit/tmp/*
+rm -rf utils/.mozilla/firefox/bookmarkbackups/.[^.]*
+rm -rf utils/.mozilla/firefox/*.default/storage/{default,permanent,temporary}
 }
 
 syncHTML() {
-# rsync the html folder (READMEs and info for the distro users)
+	# rsync the html folder (READMEs and info for the distro users)
 rsync -avhc --inplace --no-whole-file --delete /usr/local/share/html/ utils/html/
 chown -R root:root utils/html
 rsync -avhc --inplace --no-whole-file --delete utils/html/ backup/usr/local/share/html/
@@ -501,7 +499,7 @@ case "$1" in
 			extractinit	Extract contents of initrd file
 			repackinit	Rebuild initrd from extracted contents
 			syncmozilla	sync the iso Mozilla directory to live system
-			syncnvim	sync the iso Neovim directory to the live system
+			syncnvim	sync the iso Neovim directory to live system
 			synchtml	sync the iso /usr/local/share/html to live system
 			syncdconf	sync the iso dconf to live system
 			cleanup		clean cruft and set permissions in the iso filesystem
