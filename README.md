@@ -14,3 +14,5 @@ Usage:
 6) To leave the chroot, execute "exit" and let the script clean up and quit.
 7) Restart the script again, choosing the "makedisk" argument.
 
+The other scripts (build, fixfiles, group-update) are maintenance and build tools for the extracted filesystems.
+
