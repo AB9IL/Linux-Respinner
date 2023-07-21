@@ -19,5 +19,5 @@ Usage:
 9) To leave the chroot, execute "exit" and let the script clean up and quit.
 10) Restart the script again, choosing the "makedisk" argument.
 
-The other scripts (build, fixfiles, group-update) are maintenance and build tools for the extracted filesystems.
+The other scripts (build, fixfiles, group-update) are tools for updating or fixing issues en masse, on multiple linux respin projects.
 
