@@ -1,26 +1,29 @@
 #!/bin/bash
-# Place this script one level above the directories containing the distro files.
+
+# Place this script next to the directories containing the distro files.
+# Kernels are in the directory "zz_kernels"
+
+# exit if not root
+[[ $EUID -ne 0 ]] && echo "You must be root to run this script." && exit
 # define the non-root user
 username="$(logname)"
 # Go into each project and update packages
-# list of directories holding linux projects
-#dirs='mofolinux'
-#dirs='alphabird catbird mofolinux rockdove skywavelinux'
-#dirs='mofolinux rockdove'
-dirs='catbird mofolinux rockdove skywavelinux-gnome skywavelinux-i3wm'
+# list of directories holding linux projects (change names for YOUR projects)
+#dirs='linux-project-1'
+#dirs='linux-project-1 linux-project-2 linux-project-3 linux-project-4 linux-project-5'
+#dirs='linux-project-1 linux-project-2'
+dirs='linux-project-1 linux-project-5'
 # apt packages to install and remove
 new_apt_pkg=''
 rmv_apt_pkg=''
 # Python packages to install and remove
-new_python_pkg='pyarrow'
+new_python_pkg=''
 rmv_python_pkg=''
-# node package manager
-new_npm="npm@latest"
 # Kernels
 kernel_path="/media/${username}/MEDIA_2/distros/zz_kernels"
 older_kernel=''
-rmv_kernel='6.0.11-x64v3-rt14-xanmod1'
-new_kernel='6.1.13-x64v3-rt7-xanmod1'
+rmv_kernel='6.1.28-rt10-x64v3-xanmod1'
+new_kernel='6.1.38-rt12-x64v4-xanmod1'
 header_deb="${kernel_path}/linux-headers-${new_kernel}.deb"
 image_deb="${kernel_path}/linux-image-${new_kernel}.deb"
 libc_deb="${kernel_path}/linux-libc-dev_${new_kernel}.deb"
@@ -30,66 +33,19 @@ CHROOTDNS='9.9.9.9' # DNS to use during chroot operation
 partition='MEDIA_2'
 discrete_commands(){
     printf "\nHello World\n"
+    # cp /media/user/MEDIA_2/distros/zz_kernels/scripts/sdrpp_ubuntu_focal_amd64.deb edit/root
+    # chroot edit bash -c "cd /root; dpkg -i sdrpp_ubuntu_focal_amd64.deb; rm sdrpp_ubuntu_focal_amd64.deb;"
+    # chroot edit bash -c "rm -rf /usr/share/fonts/{opentype/FuraCode,truetype/FuraCode}; fc-cache -fv"
+    # chroot edit bash -c 'checkppa --delete;'
     # cp /media/mofo/MEDIA_2/distros/zz_kernels/protonvpn-stable-release_1.0.3_all.deb edit/root/proton-release.deb
+    # chroot edit bash -c 'apt update; apt install -y dnss; apt -y autoremove --purge stubby;'
+    # chroot edit bash -c 'sed -i "15s/.*/DNS=127.0.0.1/" /etc/systemd/resolved.conf'
+    # chroot edit bash -c 'sed -i "23s/.*/#DNSOverTLS=opportunistic/" /etc/systemd/resolved.conf'
+    # chroot edit bash -c 'sed -i "2s/.*/nameserver 127.0.0.1/"  /etc/resolvconf/resolv.conf.d/original'
+    # chroot edit bash -c 'sed -i "25s/.*/supersede domain-name-servers 127.0.0.1;/"  /etc/dhcp/dhclient.conf'
     # chroot edit bash -c "apt purge --autoremove ubuntu-advantage-tools ubuntu-wallpapers*"
     # chroot edit bash -c "python${pyversion} -m pip cache purge"
-    # freshen node and perl
-    # chroot edit bash -c "cd /root; npm -g uninstall bash-language-server corepack eslint_d neovim prettier readability-cli tslab typescript typescript-language-server vim-language-server vscode-html-languageserver-bin"
-    # chroot edit bash -c "cd /root; npm -g install bash-language-server corepack eslint_d neovim prettier readability-cli typescript typescript-language-server vscode-html-languageserver-bin"
-    # chroot edit bash -c "npm dedupe"
-    # chroot edit bash -c "cpanm App::cpanoutdated && cpan-outdated -p | cpanm"
     #
-    # chroot edit bash -c "nala update; nala update; nala install -y obsession && nala clean && apt clean && python${pyversion} -m pip cache purge"
-    #
-    # chroot edit bash -c "systemctl enable startup-items.service"
-    #
-    # sed -i 's| Enrer | Enter |' edit/usr/local/sbin/menu-wireguard
-    # chroot edit bash -c "cd /root; apt -y purge --autoremove xserver-xorg-video-nouveau;"
-    #
-    # rsync -avhc /usr/share/fonts/truetype/AAntiCorona/ edit/usr/share/fonts/truetype/AAntiCorona/
-    # chroot edit bash -c "cd /root; fc-cache -fv;"
-    #
-    # sed -i 's|"rg |"rga |' edit/etc/skel/.config/lf/lfrc
-    # sed -i 's|transmission-gtk|tixati|' edit/etc/i3/config
-    # sed -i 's|transmission-gtk|tixati|' edit/etc/skel/.config/i3/config
-    # sed -i 's|transmission-gtk|tixati|' livecd-setup/apps/i3/etc/i3/config
-    # sed -i 's|transmission-gtk|tixati|' livecd-setup/apps/i3/etc/skel/.config/i3/config
-    # rm edit/usr/share/applications/psiphon-controller.desktop
-    # cp -r /root/tixati edit/etc/skel/.config/tixati
-    # cp /media/user/MEDIA_2/distros/catbird/livecd-setup/apps/tixati_3.11-1_amd64.deb edit/root/tixati.deb
-    # chroot edit bash -c "cd /root; apt -y purge transmission* lantern; \
-    #     rm -rf /etc/skel/.lantern /etc/skel/.config/transmission /etc/skel/.local/share/applications/lantern.desktop; \
-    #     rm -rf /usr/local/sbin/psiphon /usr/local/sbin/lantern-controller.sh /usr/local/sbin/psiphon-controller.sh; \
-    #     dpkg -i tixat*.deb && rm tixa*.deb"
-    # chroot edit bash -c "cd /root; python3 -m pip install yq hq xq"
-    # chroot edit bash -c "cd /root; systemctl disable systemd-resolved; sleep 3; systemctl stop systemd-resolved"
-    #
-    # npm and neovim...
-    # chroot edit bash -c "cd /root; npm install -g npm@8.17.0"
-    # chroot edit bash -c "cd /root; python3 -m pip install --upgrade py3status"
-    # chroot edit bash -c "apt -y purge yarn*"
-    # chroot edit bash -c "cd /root; apt -y install curl; curl -o- -L https://yarnpkg.com/install.sh | bash"
-    # chroot edit bash -c "yarn import; rm package-lock.json; rm -fr node_modules; yarn global upgrade; yarn cache clean"
-    # chroot edit bash -c "cd /root; pacstall -I nala-deb"
-    #
-    # chroot edit bash -c "firewall-cmd --permanent --add-port=51820/udp"
-    # chroot edit bash -c "jupyter lab build"
-    # chroot edit bash -c "ln -sf /usr/share/systemd/tmp.mount /etc/systemd/system/"
-    # chroot edit bash -c "systemctl enable tmp.mount"
-    # chroot edit bash -c "cd /root; apt -y purge *-microcode; apt -y purge firmware-sof*; apt update; apt -y upgrade; apt -y full-upgrade; apt -y purge *-microcode; apt -y purge firmware-sof*; dpkg -i *.deb; rm *.deb"
-    # chroot edit bash -c "cd /root; apt -y purge --autoremove gnome-calculator"
-    # chroot edit bash -c "cd /usr/local/src; ./a.sh"
-    # chroot edit bash -c "rm /usr/local/src/a.sh"
-    # chroot edit bash -c "rg --verson"
-    # chroot edit bash -c "apt update; apt -y install ppa-purge poppler-utils"
-    # chroot edit bash -c "cd /usr/local/src/i3ass; git pull; make clean; make; make install"
-    # chroot edit bash -c "uname -r; ls /lib/modules"
-    # run a script
-    # chroot edit /root/install-roficalc
-    # clean up
-    # chroot edit rm /root/install-roficalc
-    # chroot edit ldconfig
-    # chroot edit apt -y purge --autoremove mate-calc mate-calc-common
 }
 get_apt_updates(){
     chroot edit bash -c "apt-key adv --refresh-keys --keyserver keyserver.ubuntu.com"
@@ -107,9 +63,9 @@ get_apt_updates(){
 }
 get_other_updates(){
     chroot edit bash -c "cd /root; jupyter lab build"
+    chroot edit bash -c "cd /root; npm install -g npm@latest"
     chroot edit bash -c "cd /root; npm install -g n; n lts; n prune"
     chroot edit bash -c "cd /root; npm cache clean -f"
-    chroot edit bash -c "cd /root; npm install -g $new_npm"
     chroot edit bash -c "cd /root; npm update --save/--save-dev -g"
     chroot edit bash -c "cd /root; cpan-outdated -p | cpanm"
     chroot edit bash -c "cd /root; cpanm Neovim::Ext"
@@ -130,11 +86,19 @@ kernel_upgrade(){
     cp ${image_deb} edit/root/kernel_image.deb
     cp ${libc_deb} edit/root/libc.deb
     chroot edit bash -c "cd /root; dpkg -i *.deb; exit"
-    chroot edit apt purge --autoremove *-${older_kernel} -y
-    chroot edit apt purge --autoremove *-${rmv_kernel} -y
+    [[ -z "${older_kernel}" ]] || chroot edit apt purge --autoremove *-${older_kernel} -y
+    [[ -z "${rmv_kernel}" ]] || chroot edit apt purge --autoremove *-${rmv_kernel} -y
     chroot edit bash -c "cd /root; build-bootfiles ${new_kernel}; exit"
-    mv edit/root/initrd extract-cd/casper/initrd
-    mv edit/root/vmlinuz extract-cd/casper/vmlinuz
+    # copy, move, or clean up for Ubuntu
+    [[ -d "extract-cd/casper"  ]] && mv edit/root/initrd extract-cd/casper/initrd
+    [[ -d "extract-cd/casper"  ]] && mv edit/root/vmlinuz extract-cd/casper/vmlinuz
+    # copy, move, or clean up for Ubuntu
+    [[ -d "extract-cd/live"  ]] && [[ -f "edit/boot/initrd.img-${new_kernel}" ]] && rm extract-cd/live/initrd.img-${rmv_kernel}
+    [[ -d "extract-cd/live"  ]] && [[ -f "edit/boot/vmlinuz-${new_kernel}" ]] && rm extract-cd/live/vmlinuz-${rmv_kernel}
+    [[ -d "extract-cd/live"  ]] && cp edit/boot/initrd.img-${new_kernel} extract-cd/live/initrd.img-${new_kernel}
+    [[ -d "extract-cd/live"  ]] && cp edit/boot/vmlinuz-${new_kernel} extract-cd/live/vmlinuz-${new_kernel}
+    [[ -d "extract-cd/live"  ]] && mv edit/root/initrd extract-cd/live/initrd.img
+    [[ -d "extract-cd/live"  ]] && mv edit/root/vmlinuz extract-cd/live/vmlinuz
     rm edit/root/*.deb
     sed -i "s|Linux Kernel ${rmv_kernel}<br>|Linux Kernel ${new_kernel}<br>|" *-latest-dev.log
     sed -i "s|Linux Kernel ${rmv_kernel}</li>|Linux Kernel ${new_kernel}</li>|" *-latest-dev.log
@@ -186,21 +150,21 @@ super_clean(){
     vlc.mru
     x11.debug_logs"
     chroot edit bash -c "echo $list | xargs bleachbit --clean"
-    chroot edit bash -c "python${pyversion} -m pip cache purge"
 }
 mounted_work(){
 for project in $dirs; do
     # Python version
     [[ $project == "starling" ]] || pyversion="3.8"
     [[ $project == "starling" ]] && pyversion="3.10"
+    export pyversion
 	cd $project || return
 	echo -e "\n...Starting work in $project ..."
     # Chroot into the filesystem
-    mount -o bind /run edit/run
+    mount --bind /run edit/run
     mount --bind /dev edit/dev
     mount --bind /dev/pts edit/dev/pts
     mount --bind /proc edit/proc
-    mount -t sysfs none edit/sys
+    mount --bind /sys edit/sys
     cp /etc/hosts edit/etc/hosts
     mkdir -p edit/run/systemd/resolve
     echo 'nameserver '${CHROOTDNS}'' > edit/run/systemd/resolve/resolv.conf
@@ -215,8 +179,8 @@ for project in $dirs; do
     chroot edit bash -c "nala clean; apt clean; pyclean /usr/lib; pyclean /usr/local/lib"
     # Unmount after executing the chroot commands
     umount edit/sys
-    umount edit/dev/pts
     umount edit/proc || umount -lf edit/proc
+    umount edit/dev/pts
     umount edit/dev
     umount edit/run
     # clean up after unmounting
