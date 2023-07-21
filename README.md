@@ -1,6 +1,8 @@
 **Linux-Respinner**
 
 A script to respin and maintain Debian / Ubuntu / Linux Mint ISO file releases.
+These scripts are exactly what I use to remaster both Ubuntu and Debian, debloating and customizing the software for various specialty live environments.
+Crack open your favorite livecd and set up your own browser, bookmarks, desktop, or window manager. The official releases are great, but the bottom line with Linux is that you can make a distro into just about anything you want.
 
 Usage:
 
