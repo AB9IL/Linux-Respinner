@@ -4,15 +4,16 @@ A script to respin and maintain Debian / Ubuntu / Linux Mint ISO file releases.
 
 Usage:
 
-1) Place in a working directory on a medium large enough to hold the original iso file, the extracted iso contents, and a working linux filesystem (in total, about four times the size if the original iso file).
-2) Edit the paths and username in the script.
-3) Make the script executable.
-4) Run as root in a terminal; use the proper argument.
-5) Extract the iso file contents and exit the script.
+1) Place in a working directory on a medium large enough to hold the original iso file, the extracted iso contents, and a working linux filesystem (in total, about four times the size of the original iso file).
+2) Edit the paths, username, and other items at the top of the script.
+3) The DISTRIBID variable is critically important! Must be set to "Debian" or "Ubuntu" type of iso.
+4) Make the script executable.
+5) Run as root in a terminal; use the "extractiso" argument to rip the iso data.
 6) Restart the respinner script, with "chroot" argument.
-5) When in the chroot environment, update, install, or remove software.
-6) To leave the chroot, execute "exit" and let the script clean up and quit.
-7) Restart the script again, choosing the "makedisk" argument.
+7) When in the chroot environment, update, install, or remove software.
+8) You can also add or delete files directly in the root file system directory.
+9) To leave the chroot, execute "exit" and let the script clean up and quit.
+10) Restart the script again, choosing the "makedisk" argument.
 
 The other scripts (build, fixfiles, group-update) are maintenance and build tools for the extracted filesystems.
 
