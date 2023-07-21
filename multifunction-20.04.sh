@@ -16,8 +16,8 @@ Encoding=UTF-8
 # before running this script.  Change SYSUSER and PART to match the
 # current username and partition to match your currently running
 # system, or the paths will be incorrect.
-#>>>  THIS VERSION FOR        <<<
-#>>>  Debian 12  <<<
+#>>>  THIS VERSION FOR           <<<
+#>>>  Debian 12  or Ubuntu 20.04 <<<
 # define variables:
 export WKDIR="$(pwd)" # Working directory for script
 export BUILDDATE="$(date -u "+%Y%m%e")"
