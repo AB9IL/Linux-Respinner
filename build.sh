@@ -1,6 +1,11 @@
 #!/bin/bash
-# Place this script one level above the directories containing the distro files.
-# The builds will run in sequence.
+
+# This script is for making multiple iso respins at once
+# Place this script one level above the directories containing the distro project files.
+# This script will go into each project and ececute the multifunction script / makedisk. 
+# The builds will run in sequence found in "dirs" variable.
+#
+#  SET THE VARIABLES BELOW #############################################################
 # define the non-root user
 username="$(logname)"
 export username
@@ -10,9 +15,11 @@ export partition
 # Destination for completed builds
 #destination="MEDIA_1"
 # list of directories holding linux projects
-export dirs="rockdove"
+export dirs="rockdove debian mofolinux"
 #dirs="alphabird catbird mofolinux rockdove skywavelinux-gnome skywavelinux-i3wm"
 #dirs="alphabird catbird mofolinux skywavelinux-gnome skywavelinux-i3wm"
+#
+#  DO NOT TAMPER WITH THE CODE BELOW THIS LINE #########################################
 
 construct(){
 	(cd ${1}
