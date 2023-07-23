@@ -364,22 +364,22 @@ make_debian_disk() {
     tee $RFSCONTENTS/etc/skel/.Xresources $RFSCONTENTS/root/.Xresources < utils/.Xresources > /dev/null
     tee $RFSCONTENTS/etc/skel/.nanorc $RFSCONTENTS/root/.nanorc < utils/.nanorc > /dev/null
     tee $RFSCONTENTS/etc/skel/.wgetrc $RFSCONTENTS/root/.wgetrc < utils/.wgetrc > /dev/null
-    cp -f utils/initctl $RFSCONTENTS/sbin/initctl
+    cp -f utils/initctl $RFSCONTENTS/usr/sbin/initctl
     cp -f utils/.inputrc $RFSCONTENTS/etc/skel/.inputrc
     cp -f utils/.inputrc-root $RFSCONTENTS/root/.inputrc
     cp -f $RFSCONTENTS/etc/skel/.fzf.bash $RFSCONTENTS/root/.fzf.bash
     cp -f $RFSCONTENTS/etc/skel/.tmux.conf $RFSCONTENTS/root/.tmux.conf
-    (rsync -avhc --inplace --no-whole-file --delete \
+    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/rofi/ $RFSCONTENTS/root/.config/rofi/) &
-    (rsync -avhc --inplace --no-whole-file --delete \
+    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/gtk-3.0/ $RFSCONTENTS/root/.config/gtk-3.0/) &
-    (rsync -avhc --inplace --no-whole-file --delete \
+    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/gtk-4.0/ $RFSCONTENTS/root/.config/gtk-4.0/) &
-    (rsync -avhc --inplace --no-whole-file --delete \
+    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/qt5ct/ $RFSCONTENTS/root/.config/qt5ct/) &
-    (rsync -avhc --inplace --no-whole-file --delete \
+    (rsync -avhc --inplace --delete \
         livecd-setup/apps/neovim/nvim-root/ $RFSCONTENTS/root/.config/nvim/) &
-    (rsync -avhc --inplace --no-whole-file --delete \
+    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.tmux/ $RFSCONTENTS/root/.tmux/) &
     wait
 
@@ -637,8 +637,7 @@ cleanup() {
     (cd "$RFSCONTENTS/var/tmp" && fd -H -tf -x rm) &
     (python3 -m pyclean $RFSCONTENTS/usr) &
     (python3 -m pyclean $RFSCONTENTS/opt) &
-    (python3 -m pyclean ./utils) &
-    (cd "$ISOCONTENTS" && fd -H TRANS.TBL -x rm) &
+    (cd "$ISOCONTENTS" && fd -H -e TBL -x rm) &
     (cd "$RFSCONTENTS" && fd -H -e dpkg-old -e dpkg-dist -x rm) &
     (cd "$RFSCONTENTS/tmp" && fd -H -tf -x rm) &
     (cd "$RFSCONTENTS/home" && fd -H . -x rm -rf) &
