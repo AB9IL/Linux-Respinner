@@ -42,115 +42,115 @@ CHROOTDNS='9.9.9.9' # DNS to use during chroot operation
 partition='MEDIA_2'
 discrete_commands(){
     printf "\nHello World\n"
-    # chroot edit bash -c "cd /root; dpkg -i sdrpp_ubuntu_focal_amd64.deb; rm sdrpp_ubuntu_focal_amd64.deb;"
-    # chroot edit bash -c "rm -rf /usr/share/fonts/{opentype/FuraCode,truetype/FuraCode}; fc-cache -fv"
-    # chroot edit bash -c 'checkppa --delete;'
-    # chroot edit bash -c 'apt update; apt install -y dnss; apt -y autoremove --purge stubby;'
-    # chroot edit bash -c 'apt update; apt install -y htop;'
-    # chroot edit bash -c 'sed -i "15s/.*/DNS=127.0.0.1/" /etc/systemd/resolved.conf'
-    # chroot edit bash -c 'sed -i "23s/.*/#DNSOverTLS=opportunistic/" /etc/systemd/resolved.conf'
-    # chroot edit bash -c 'sed -i "2s/.*/nameserver 127.0.0.1/"  /etc/resolvconf/resolv.conf.d/original'
-    # chroot edit bash -c 'sed -i "25s/.*/supersede domain-name-servers 127.0.0.1;/"  /etc/dhcp/dhclient.conf'
-    # chroot edit bash -c "apt purge --autoremove ubuntu-advantage-tools ubuntu-wallpapers*"
-    # chroot edit bash -c "python${pyversion} -m pip cache purge"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i sdrpp_ubuntu_focal_amd64.deb; rm sdrpp_ubuntu_focal_amd64.deb;"
+    # chroot ${RFSCONTENTS} bash -c "rm -rf /usr/share/fonts/{opentype/FuraCode,truetype/FuraCode}; fc-cache -fv"
+    # chroot ${RFSCONTENTS} bash -c 'checkppa --delete;'
+    # chroot ${RFSCONTENTS} bash -c 'apt update; apt install -y dnss; apt -y autoremove --purge stubby;'
+    # chroot ${RFSCONTENTS} bash -c 'apt update; apt install -y htop;'
+    # chroot ${RFSCONTENTS} bash -c 'sed -i "15s/.*/DNS=127.0.0.1/" /etc/systemd/resolved.conf'
+    # chroot ${RFSCONTENTS} bash -c 'sed -i "23s/.*/#DNSOverTLS=opportunistic/" /etc/systemd/resolved.conf'
+    # chroot ${RFSCONTENTS} bash -c 'sed -i "2s/.*/nameserver 127.0.0.1/"  /etc/resolvconf/resolv.conf.d/original'
+    # chroot ${RFSCONTENTS} bash -c 'sed -i "25s/.*/supersede domain-name-servers 127.0.0.1;/"  /etc/dhcp/dhclient.conf'
+    # chroot ${RFSCONTENTS} bash -c "apt purge --autoremove ubuntu-advantage-tools ubuntu-wallpapers*"
+    # chroot ${RFSCONTENTS} bash -c "python${pyversion} -m pip cache purge"
     # freshen node and perl
-    # chroot edit bash -c "cd /root; npm -g uninstall bash-language-server corepack eslint_d neovim prettier readability-cli tslab typescript typescript-language-server vim-language-server vscode-html-languageserver-bin"
-    # chroot edit bash -c "cd /root; npm -g install bash-language-server corepack eslint_d neovim prettier readability-cli typescript typescript-language-server vscode-html-languageserver-bin"
-    # chroot edit bash -c "npm dedupe"
-    # chroot edit bash -c "cpanm App::cpanoutdated && cpan-outdated -p | cpanm"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; npm -g uninstall bash-language-server corepack eslint_d neovim prettier readability-cli tslab typescript typescript-language-server vim-language-server vscode-html-languageserver-bin"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; npm -g install bash-language-server corepack eslint_d neovim prettier readability-cli typescript typescript-language-server vscode-html-languageserver-bin"
+    # chroot ${RFSCONTENTS} bash -c "npm dedupe"
+    # chroot ${RFSCONTENTS} bash -c "cpanm App::cpanoutdated && cpan-outdated -p | cpanm"
     #
-    # chroot edit bash -c "nala update; nala update; nala install -y obsession && nala clean && apt clean && python${pyversion} -m pip cache purge"
+    # chroot ${RFSCONTENTS} bash -c "nala update; nala update; nala install -y obsession && nala clean && apt clean && python${pyversion} -m pip cache purge"
     #
-    # chroot edit bash -c "systemctl enable startup-items.service"
+    # chroot ${RFSCONTENTS} bash -c "systemctl enable startup-items.service"
     #
-    # sed -i 's| Enrer | Enter |' edit/usr/local/sbin/menu-wireguard
-    # chroot edit bash -c "cd /root; apt -y purge --autoremove xserver-xorg-video-nouveau;"
+    # sed -i 's| Enrer | Enter |' ${RFSCONTENTS}/usr/local/sbin/menu-wireguard
+    # chroot ${RFSCONTENTS} bash -c "cd /root; apt -y purge --autoremove xserver-xorg-video-nouveau;"
     #
-    # rsync -avhc /usr/share/fonts/truetype/AAntiCorona/ edit/usr/share/fonts/truetype/AAntiCorona/
-    # chroot edit bash -c "cd /root; fc-cache -fv;"
+    # rsync -avhc /usr/share/fonts/truetype/AAntiCorona/ ${RFSCONTENTS}/usr/share/fonts/truetype/AAntiCorona/
+    # chroot ${RFSCONTENTS} bash -c "cd /root; fc-cache -fv;"
     #
 }
 get_apt_updates(){
-    # chroot edit bash -c "apt-key adv --refresh-keys --keyserver keyserver.ubuntu.com"
-    chroot edit bash -c "apt update; apt update"
-    # chroot edit bash -c "cd /root; nala update; nala update; nala upgrade -y; nala upgrade -y;"
-    # [[ -n "${rmv_apt_pkg}" ]] && chroot edit bash -c "nala purge -y ${rmv_apt_pkg}"
-    # [[ -n "${new_apt_pkg}" ]] && chroot edit bash -c "nala install -y ${new_apt_pkg}"
-    # chroot edit bash -c "nala update; nala -y upgrade"
-    chroot edit bash -c "apt -y upgrade; apt -y upgrade --fix-missing"
-    chroot edit bash -c "apt -y --fix-broken install"
-    # chroot edit bash -c "nala autopurge -y"
-    # chroot edit bash -c "nala clean"
-    chroot edit bash -c "apt -y autoremove --purge; apt clean"
+    # chroot ${RFSCONTENTS} bash -c "apt-key adv --refresh-keys --keyserver keyserver.ubuntu.com"
+    chroot ${RFSCONTENTS} bash -c "apt update; apt update"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; nala update; nala update; nala upgrade -y; nala upgrade -y;"
+    # [[ -n "${rmv_apt_pkg}" ]] && chroot ${RFSCONTENTS} bash -c "nala purge -y ${rmv_apt_pkg}"
+    # [[ -n "${new_apt_pkg}" ]] && chroot ${RFSCONTENTS} bash -c "nala install -y ${new_apt_pkg}"
+    # chroot ${RFSCONTENTS} bash -c "nala update; nala -y upgrade"
+    chroot ${RFSCONTENTS} bash -c "apt -y upgrade; apt -y upgrade --fix-missing"
+    chroot ${RFSCONTENTS} bash -c "apt -y --fix-broken install"
+    # chroot ${RFSCONTENTS} bash -c "nala autopurge -y"
+    # chroot ${RFSCONTENTS} bash -c "nala clean"
+    chroot ${RFSCONTENTS} bash -c "apt -y autoremove --purge; apt clean"
 }
 get_other_updates(){
-    chroot edit bash -c "cd /root; jupyter lab build"
-    chroot edit bash -c "cd /root; npm install -g npm@latest"
-    chroot edit bash -c "cd /root; npm install -g n; n lts; n prune"
-    chroot edit bash -c "cd /root; npm cache clean -f"
-    chroot edit bash -c "cd /root; npm update --save/--save-dev -g"
-    chroot edit bash -c "cd /root; cpan-outdated -p | cpanm"
-    chroot edit bash -c "cd /root; cpanm Neovim::Ext"
-    chroot edit bash -c "cd /root; gem update"
-    chroot edit bash -c "cd /root; gtk-update-icon-cache"
-    chroot edit bash -c "cd /root; update-desktop-database"
-    chroot edit bash -c "cd /root; fc-cache -fv"
-    #chroot edit bash -c "cd /usr/local/src; ./getgits.sh"
+    chroot ${RFSCONTENTS} bash -c "cd /root; jupyter lab build"
+    chroot ${RFSCONTENTS} bash -c "cd /root; npm install -g npm@latest"
+    chroot ${RFSCONTENTS} bash -c "cd /root; npm install -g n; n lts; n prune"
+    chroot ${RFSCONTENTS} bash -c "cd /root; npm cache clean -f"
+    chroot ${RFSCONTENTS} bash -c "cd /root; npm update --save/--save-dev -g"
+    chroot ${RFSCONTENTS} bash -c "cd /root; cpan-outdated -p | cpanm"
+    chroot ${RFSCONTENTS} bash -c "cd /root; cpanm Neovim::Ext"
+    chroot ${RFSCONTENTS} bash -c "cd /root; gem update"
+    chroot ${RFSCONTENTS} bash -c "cd /root; gtk-update-icon-cache"
+    chroot ${RFSCONTENTS} bash -c "cd /root; update-desktop-database"
+    chroot ${RFSCONTENTS} bash -c "cd /root; fc-cache -fv"
+    #chroot ${RFSCONTENTS} bash -c "cd /usr/local/src; ./getgits.sh"
 }
 kernel_upgrade(){
     # install microcode packages
-    #cp /media/user/MEDIA_2/distros/zz_kernels/microcode/*.deb edit/root
-    #chroot edit bash -c "cd /root; dpkg -i *.deb"
-    #rm edit/root/*.deb
+    #cp /media/user/MEDIA_2/distros/zz_kernels/microcode/*.deb ${RFSCONTENTS}/root
+    #chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i *.deb"
+    #rm ${RFSCONTENTS}/root/*.deb
     [[ -z "${rmv_kernel}" ]] && return
     [[ -z "${new_kernel}" ]] && return
-    cp ${header_deb} edit/root/kernel_header.deb
-    cp ${image_deb} edit/root/kernel_image.deb
-    cp ${libc_deb} edit/root/libc.deb
-    chroot edit bash -c "cd /root; dpkg -i *.deb; exit"
-    [[ -z "${older_kernel}" ]] || chroot edit apt purge --autoremove *-${older_kernel} -y
-    [[ -z "${rmv_kernel}" ]] || chroot edit apt purge --autoremove *-${rmv_kernel} -y
-    chroot edit bash -c "cd /root; build-bootfiles ${new_kernel}; exit"
+    cp ${header_deb} ${RFSCONTENTS}/root/kernel_header.deb
+    cp ${image_deb} ${RFSCONTENTS}/root/kernel_image.deb
+    cp ${libc_deb} ${RFSCONTENTS}/root/libc.deb
+    chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i *.deb; exit"
+    [[ -z "${older_kernel}" ]] || chroot ${RFSCONTENTS} apt purge --autoremove *-${older_kernel} -y
+    [[ -z "${rmv_kernel}" ]] || chroot ${RFSCONTENTS} apt purge --autoremove *-${rmv_kernel} -y
+    chroot ${RFSCONTENTS} bash -c "cd /root; build-bootfiles ${new_kernel}; exit"
     # copy, move, or clean up for Ubuntu
-    [[ -d "extract-cd/casper"  ]] && mv edit/root/initrd extract-cd/casper/initrd
-    [[ -d "extract-cd/casper"  ]] && mv edit/root/vmlinuz extract-cd/casper/vmlinuz
+    [[ -d "extract-cd/casper"  ]] && mv ${RFSCONTENTS}/root/initrd extract-cd/casper/initrd
+    [[ -d "extract-cd/casper"  ]] && mv ${RFSCONTENTS}/root/vmlinuz extract-cd/casper/vmlinuz
     # copy, move, or clean up for Ubuntu
     [[ -d "extract-cd/live"  ]] && [[ -f "edit/boot/initrd.img-${new_kernel}" ]] && rm extract-cd/live/initrd.img-${rmv_kernel}
     [[ -d "extract-cd/live"  ]] && [[ -f "edit/boot/vmlinuz-${new_kernel}" ]] && rm extract-cd/live/vmlinuz-${rmv_kernel}
-    [[ -d "extract-cd/live"  ]] && cp edit/boot/initrd.img-${new_kernel} extract-cd/live/initrd.img-${new_kernel}
-    [[ -d "extract-cd/live"  ]] && cp edit/boot/vmlinuz-${new_kernel} extract-cd/live/vmlinuz-${new_kernel}
-    [[ -d "extract-cd/live"  ]] && mv edit/root/initrd extract-cd/live/initrd.img
-    [[ -d "extract-cd/live"  ]] && mv edit/root/vmlinuz extract-cd/live/vmlinuz
-    rm edit/root/*.deb
+    [[ -d "extract-cd/live"  ]] && cp ${RFSCONTENTS}/boot/initrd.img-${new_kernel} extract-cd/live/initrd.img-${new_kernel}
+    [[ -d "extract-cd/live"  ]] && cp ${RFSCONTENTS}/boot/vmlinuz-${new_kernel} extract-cd/live/vmlinuz-${new_kernel}
+    [[ -d "extract-cd/live"  ]] && mv ${RFSCONTENTS}/root/initrd extract-cd/live/initrd.img
+    [[ -d "extract-cd/live"  ]] && mv ${RFSCONTENTS}/root/vmlinuz extract-cd/live/vmlinuz
+    rm ${RFSCONTENTS}/root/*.deb
     sed -i "s|Linux Kernel ${rmv_kernel}<br>|Linux Kernel ${new_kernel}<br>|" *-latest-dev.log
     sed -i "s|Linux Kernel ${rmv_kernel}</li>|Linux Kernel ${new_kernel}</li>|" *-latest-dev.log
 }
 python_install_remove(){
-    chroot edit bash -c 'pyclean /usr'
-    chroot edit bash -c 'pyclean /opt'
-    [[ -n "${new_python_pkg}" ]] && chroot edit bash -c "python${pyversion} -m pip install --upgrade --retries 10 --timeout 60 ${new_python_pkg}"
-    [[ -n "${rmv_python_pkg}" ]] && chroot edit bash -c "python${pyversion} -m pip uninstall -y ${rmv_python_pkg}"
-    chroot edit python${pyversion} -m pip check
+    chroot ${RFSCONTENTS} bash -c 'pyclean /usr'
+    chroot ${RFSCONTENTS} bash -c 'pyclean /opt'
+    [[ -n "${new_python_pkg}" ]] && chroot ${RFSCONTENTS} bash -c "python${pyversion} -m pip install --upgrade --retries 10 --timeout 60 ${new_python_pkg}"
+    [[ -n "${rmv_python_pkg}" ]] && chroot ${RFSCONTENTS} bash -c "python${pyversion} -m pip uninstall -y ${rmv_python_pkg}"
+    chroot ${RFSCONTENTS} python${pyversion} -m pip check
 }
 python_update(){
-    chroot edit bash -c 'pyclean /usr'
-    chroot edit bash -c 'pyclean /opt'
-    chroot edit bash -c "cd /root; update-python3-packages"
-    chroot edit bash -c "cd /root; python${pyversion} -m pip check"
+    chroot ${RFSCONTENTS} bash -c 'pyclean /usr'
+    chroot ${RFSCONTENTS} bash -c 'pyclean /opt'
+    chroot ${RFSCONTENTS} bash -c "cd /root; update-python3-packages"
+    chroot ${RFSCONTENTS} bash -c "cd /root; python${pyversion} -m pip check"
 }
 remove_snap(){
-    chroot edit bash -c 'systemctl disable snapd.service'
-    chroot edit bash -c 'systemctl disable snapd.socket'
-    chroot edit bash -c 'systemctl disable snapd.seeded.service'
-    chroot edit bash -c "for item in \"$(snap list)\";do snap remove $item; done"
-    chroot edit bash -c 'rm -rf /var/cache/snapd/; apt autoremove --purge snapd'
+    chroot ${RFSCONTENTS} bash -c 'systemctl disable snapd.service'
+    chroot ${RFSCONTENTS} bash -c 'systemctl disable snapd.socket'
+    chroot ${RFSCONTENTS} bash -c 'systemctl disable snapd.seeded.service'
+    chroot ${RFSCONTENTS} bash -c "for item in \"$(snap list)\";do snap remove $item; done"
+    chroot ${RFSCONTENTS} bash -c 'rm -rf /var/cache/snapd/; apt autoremove --purge snapd'
 }
 super_clean(){
-    chroot edit bash -c 'apt autoremove -y'
-    chroot edit bash -c 'apt clean'
-    chroot edit bash -c 'nala clean'
-    chroot edit bash -c 'cd /root; npm cache clean -f'
-    chroot edit bash -c 'yarn cache clean'
+    chroot ${RFSCONTENTS} bash -c 'apt autoremove -y'
+    chroot ${RFSCONTENTS} bash -c 'apt clean'
+    chroot ${RFSCONTENTS} bash -c 'nala clean'
+    chroot ${RFSCONTENTS} bash -c 'cd /root; npm cache clean -f'
+    chroot ${RFSCONTENTS} bash -c 'yarn cache clean'
     list="apt.autoclean \
     apt.autoremove \
     apt.clean \
@@ -171,7 +171,7 @@ super_clean(){
     vlc.memory_dump \
     vlc.mru
     x11.debug_logs"
-    chroot edit bash -c "echo $list | xargs bleachbit --clean"
+    chroot ${RFSCONTENTS} bash -c "echo $list | xargs bleachbit --clean"
 }
 mounted_work(){
 for project in $dirs; do
@@ -188,22 +188,22 @@ for project in $dirs; do
     mount --bind /dev/pts ./${RFSCONTENTS}/dev/pts
     mount --bind /proc ./${RFSCONTENTS}/proc
     mount --bind /sys ./${RFSCONTENTS}/sys
-    cp /etc/hosts edit/etc/hosts
-    mkdir -p edit/run/systemd/resolve
-    echo 'nameserver '${CHROOTDNS}'' > edit/run/systemd/resolve/resolv.conf
-    echo 'nameserver '${CHROOTDNS}'' > edit/run/systemd/resolve/stub-resolv.conf
+    cp /etc/hosts ${RFSCONTENTS}/etc/hosts
+    mkdir -p ${RFSCONTENTS}/run/systemd/resolve
+    echo 'nameserver '${CHROOTDNS}'' > ${RFSCONTENTS}/run/systemd/resolve/resolv.conf
+    echo 'nameserver '${CHROOTDNS}'' > ${RFSCONTENTS}/run/systemd/resolve/stub-resolv.conf
     wait
     echo -e "\nChrooting...\n"
     # execute chroot commands below here
-    chroot edit bash -c "export LANG=C.UTF-8; export LC_ALL=C.UTF-8;"
+    chroot ${RFSCONTENTS} bash -c "export LANG=C.UTF-8; export LC_ALL=C.UTF-8;"
     $COMMAND
     # clean up before unmounting
-    chroot edit bash -c "vers=(7 8 9 10 11); for ver in ${vers[@]};do python3.${ver} -m pip cache purge; done"
-    chroot edit bash -c "nala clean; apt clean"
-    #chroot edit bash -c "pyclean /usr/lib; pyclean /usr/local/lib"
+    chroot ${RFSCONTENTS} bash -c "vers=(7 8 9 10 11); for ver in ${vers[@]};do python3.${ver} -m pip cache purge; done"
+    chroot ${RFSCONTENTS} bash -c "nala clean; apt clean"
+    #chroot ${RFSCONTENTS} bash -c "pyclean /usr/lib; pyclean /usr/local/lib"
     # Unmount after executing the chroot commands
     umount ./${RFSCONTENTS}/sys
-    umount ./${RFSCONTENTS}/proc || umount -lf edit/proc
+    umount ./${RFSCONTENTS}/proc || umount -lf ${RFSCONTENTS}/proc
     umount ./${RFSCONTENTS}/dev/pts
     umount ./${RFSCONTENTS}/dev
     umount ./${RFSCONTENTS}/run
