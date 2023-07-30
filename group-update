@@ -15,12 +15,15 @@ export WKDIR="$(readlink -f "$(dirname "$0")")"
 # name of the projects' root file system directories
 export RFSCONTENTS="edit"
 
+# destination directory for booting finished iso file
+export DESTINATION="/isodevice/isofiles"
+
 # Go into each project and update packages
 # list of directories holding linux projects
-#export dirs='linux-project-1'
-#export dirs='linux-project-1 linux-project-2 linux-project-3 linux-project-4 linux-project-5'
-#export dirs='linux-project-1 linux-project-2'
-export dirs='linux-project-1 linux-project-5'
+#export dirs='troutlinux'
+#export dirs='troutlinux grunionlinux carplinux salmonlinux crayfishlinux'
+#export dirs='troutlinux grunionlinux'
+export dirs='troutlinux crayfishlinux'
 
 # apt packages to install and remove
 new_apt_pkg=''
@@ -29,7 +32,7 @@ rmv_apt_pkg=''
 new_python_pkg=''
 rmv_python_pkg=''
 # Kernels
-kernel_path="/media/${username}/MEDIA_2/distros/zz_kernels"
+kernel_path="/media/${username}/${partition}/distros/zz_kernels"
 older_kernel=''
 rmv_kernel='6.1.28-rt10-x64v3-xanmod1'
 new_kernel='6.1.38-rt12-x64v4-xanmod1'
@@ -38,13 +41,14 @@ image_deb="${kernel_path}/linux-image-${new_kernel}.deb"
 libc_deb="${kernel_path}/linux-libc-dev_${new_kernel}.deb"
 # DNS
 CHROOTDNS='9.9.9.9' # DNS to use during chroot operation
-# Partition holding distro files
-partition='MEDIA_2'
+
 discrete_commands(){
     printf "\nHello World\n"
+    # cp /media/user/${partition}/distros/zz_kernels/scripts/sdrpp_ubuntu_focal_amd64.deb ${RFSCONTENTS}/root
     # chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i sdrpp_ubuntu_focal_amd64.deb; rm sdrpp_ubuntu_focal_amd64.deb;"
     # chroot ${RFSCONTENTS} bash -c "rm -rf /usr/share/fonts/{opentype/FuraCode,truetype/FuraCode}; fc-cache -fv"
     # chroot ${RFSCONTENTS} bash -c 'checkppa --delete;'
+    # cp /media/mofo/${partition}/distros/zz_kernels/protonvpn-stable-release_1.0.3_all.deb ${RFSCONTENTS}/root/proton-release.deb
     # chroot ${RFSCONTENTS} bash -c 'apt update; apt install -y dnss; apt -y autoremove --purge stubby;'
     # chroot ${RFSCONTENTS} bash -c 'apt update; apt install -y htop;'
     # chroot ${RFSCONTENTS} bash -c 'sed -i "15s/.*/DNS=127.0.0.1/" /etc/systemd/resolved.conf'
@@ -99,7 +103,7 @@ get_other_updates(){
 }
 kernel_upgrade(){
     # install microcode packages
-    #cp /media/user/MEDIA_2/distros/zz_kernels/microcode/*.deb ${RFSCONTENTS}/root
+    #cp /media/user/${partition}/distros/zz_kernels/microcode/*.deb ${RFSCONTENTS}/root
     #chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i *.deb"
     #rm ${RFSCONTENTS}/root/*.deb
     [[ -z "${rmv_kernel}" ]] && return
@@ -115,8 +119,8 @@ kernel_upgrade(){
     [[ -d "extract-cd/casper"  ]] && mv ${RFSCONTENTS}/root/initrd extract-cd/casper/initrd
     [[ -d "extract-cd/casper"  ]] && mv ${RFSCONTENTS}/root/vmlinuz extract-cd/casper/vmlinuz
     # copy, move, or clean up for Ubuntu
-    [[ -d "extract-cd/live"  ]] && [[ -f "edit/boot/initrd.img-${new_kernel}" ]] && rm extract-cd/live/initrd.img-${rmv_kernel}
-    [[ -d "extract-cd/live"  ]] && [[ -f "edit/boot/vmlinuz-${new_kernel}" ]] && rm extract-cd/live/vmlinuz-${rmv_kernel}
+    [[ -d "extract-cd/live"  ]] && [[ -f "${RFSCONTENTS}/boot/initrd.img-${new_kernel}" ]] && rm extract-cd/live/initrd.img-${rmv_kernel}
+    [[ -d "extract-cd/live"  ]] && [[ -f "${RFSCONTENTS}/boot/vmlinuz-${new_kernel}" ]] && rm extract-cd/live/vmlinuz-${rmv_kernel}
     [[ -d "extract-cd/live"  ]] && cp ${RFSCONTENTS}/boot/initrd.img-${new_kernel} extract-cd/live/initrd.img-${new_kernel}
     [[ -d "extract-cd/live"  ]] && cp ${RFSCONTENTS}/boot/vmlinuz-${new_kernel} extract-cd/live/vmlinuz-${new_kernel}
     [[ -d "extract-cd/live"  ]] && mv ${RFSCONTENTS}/root/initrd extract-cd/live/initrd.img
@@ -246,11 +250,11 @@ make_copy(){
         ((x++))
         echo -e "\n...Copying $project-latest.iso --isofiles-- Pass $x...\n"
 		rsync -avhc --inplace --no-whole-file --info=progress2 \
-		/media/"$(logname)"/${2}/distros/${1}/${1}-latest.iso \
-        /isodevice/isofiles/${1}-latest.iso;
+		${WKDIR}/${1}/${1}-latest.iso \
+        ${DESTINATION}/${1}-latest.iso;
         #/media/$username/$destination/isofiles/$project-latest.iso;
-	sha256sum	/media/"$(logname)"/${2}/distros/${1}/${1}-latest.iso \
-        /isodevice/isofiles/${1}-latest.iso;
+	sha256sum	${WKDIR}/${1}/${1}-latest.iso \
+        ${DESTINATION}/${1}-latest.iso;
     done
     [[ $x -eq $MAX_RETRIES ]] &&  echo -e "\n\nRetry limit reached\n\n"
     )
