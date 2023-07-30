@@ -32,7 +32,7 @@ rmv_apt_pkg=''
 new_python_pkg=''
 rmv_python_pkg=''
 # Kernels
-kernel_path="/media/${username}/${partition}/distros/zz_kernels"
+kernel_path="$WKDIR/zz_kernels"
 older_kernel=''
 rmv_kernel='6.1.28-rt10-x64v3-xanmod1'
 new_kernel='6.1.38-rt12-x64v4-xanmod1'
@@ -44,11 +44,11 @@ CHROOTDNS='9.9.9.9' # DNS to use during chroot operation
 
 discrete_commands(){
     printf "\nHello World\n"
-    # cp /media/user/${partition}/distros/zz_kernels/scripts/sdrpp_ubuntu_focal_amd64.deb ${RFSCONTENTS}/root
+    # cp $WKDIR/zz_kernels/scripts/sdrpp_ubuntu_focal_amd64.deb ${RFSCONTENTS}/root
     # chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i sdrpp_ubuntu_focal_amd64.deb; rm sdrpp_ubuntu_focal_amd64.deb;"
     # chroot ${RFSCONTENTS} bash -c "rm -rf /usr/share/fonts/{opentype/FuraCode,truetype/FuraCode}; fc-cache -fv"
     # chroot ${RFSCONTENTS} bash -c 'checkppa --delete;'
-    # cp /media/mofo/${partition}/distros/zz_kernels/protonvpn-stable-release_1.0.3_all.deb ${RFSCONTENTS}/root/proton-release.deb
+    # cp $WKDIR/zz_kernels/protonvpn-stable-release_1.0.3_all.deb ${RFSCONTENTS}/root/proton-release.deb
     # chroot ${RFSCONTENTS} bash -c 'apt update; apt install -y dnss; apt -y autoremove --purge stubby;'
     # chroot ${RFSCONTENTS} bash -c 'apt update; apt install -y htop;'
     # chroot ${RFSCONTENTS} bash -c 'sed -i "15s/.*/DNS=127.0.0.1/" /etc/systemd/resolved.conf'
@@ -103,7 +103,7 @@ get_other_updates(){
 }
 kernel_upgrade(){
     # install microcode packages
-    #cp /media/user/${partition}/distros/zz_kernels/microcode/*.deb ${RFSCONTENTS}/root
+    #cp $WKDIR/zz_kernels/microcode/*.deb ${RFSCONTENTS}/root
     #chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i *.deb"
     #rm ${RFSCONTENTS}/root/*.deb
     [[ -z "${rmv_kernel}" ]] && return
@@ -239,7 +239,7 @@ construct(){
 }
 
 make_copy(){
-    ([[ -f /media/"$(logname)"/${2}/distros/${1}/${1}-latest.iso ]] || exit 1
+    ([[ -f ${WKDIR}/${1}/${1}-latest.iso ]] || exit 1
     # kill the loop if error
     trap 'echo "Exited!"; exit;' INT TERM
     MAX_RETRIES=50
@@ -274,7 +274,7 @@ build(){
     for project in $dirs
     do
     export project
-    make_copy "$project" "$partition" #&
+    make_copy "$project" #&
     done
 
     echo -e "\n\n   File copy tasks completed.  Enjoy your new Linux!  \n\n"
