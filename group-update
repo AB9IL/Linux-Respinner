@@ -1,18 +1,27 @@
 #!/bin/bash
-
-# Place this script next to the directories containing the distro files.
-# Kernels are in the directory "zz_kernels"
+# Place this script one level above the directories containing the distro files.
 
 # exit if not root
 [[ $EUID -ne 0 ]] && echo "You must be root to run this script." && exit
 # define the non-root user
-username="$(logname)"
+export username="$(logname)"
+
+# Partition holding distro files
+export partition="MEDIA_2"
+
+# Script working directory (one level above project directories)
+export WKDIR="$(readlink -f "$(dirname "$0")")"
+
+# name of the projects' root file system directories
+export RFSCONTENTS="edit"
+
 # Go into each project and update packages
-# list of directories holding linux projects (change names for YOUR projects)
-#dirs='linux-project-1'
-#dirs='linux-project-1 linux-project-2 linux-project-3 linux-project-4 linux-project-5'
-#dirs='linux-project-1 linux-project-2'
-dirs='linux-project-1 linux-project-5'
+# list of directories holding linux projects
+#export dirs='linux-project-1'
+#export dirs='linux-project-1 linux-project-2 linux-project-3 linux-project-4 linux-project-5'
+#export dirs='linux-project-1 linux-project-2'
+export dirs='linux-project-1 linux-project-5'
+
 # apt packages to install and remove
 new_apt_pkg=''
 rmv_apt_pkg=''
@@ -33,29 +42,42 @@ CHROOTDNS='9.9.9.9' # DNS to use during chroot operation
 partition='MEDIA_2'
 discrete_commands(){
     printf "\nHello World\n"
-    # cp /media/user/MEDIA_2/distros/zz_kernels/scripts/sdrpp_ubuntu_focal_amd64.deb edit/root
     # chroot edit bash -c "cd /root; dpkg -i sdrpp_ubuntu_focal_amd64.deb; rm sdrpp_ubuntu_focal_amd64.deb;"
     # chroot edit bash -c "rm -rf /usr/share/fonts/{opentype/FuraCode,truetype/FuraCode}; fc-cache -fv"
     # chroot edit bash -c 'checkppa --delete;'
-    # cp /media/mofo/MEDIA_2/distros/zz_kernels/protonvpn-stable-release_1.0.3_all.deb edit/root/proton-release.deb
     # chroot edit bash -c 'apt update; apt install -y dnss; apt -y autoremove --purge stubby;'
+    # chroot edit bash -c 'apt update; apt install -y htop;'
     # chroot edit bash -c 'sed -i "15s/.*/DNS=127.0.0.1/" /etc/systemd/resolved.conf'
     # chroot edit bash -c 'sed -i "23s/.*/#DNSOverTLS=opportunistic/" /etc/systemd/resolved.conf'
     # chroot edit bash -c 'sed -i "2s/.*/nameserver 127.0.0.1/"  /etc/resolvconf/resolv.conf.d/original'
     # chroot edit bash -c 'sed -i "25s/.*/supersede domain-name-servers 127.0.0.1;/"  /etc/dhcp/dhclient.conf'
     # chroot edit bash -c "apt purge --autoremove ubuntu-advantage-tools ubuntu-wallpapers*"
     # chroot edit bash -c "python${pyversion} -m pip cache purge"
+    # freshen node and perl
+    # chroot edit bash -c "cd /root; npm -g uninstall bash-language-server corepack eslint_d neovim prettier readability-cli tslab typescript typescript-language-server vim-language-server vscode-html-languageserver-bin"
+    # chroot edit bash -c "cd /root; npm -g install bash-language-server corepack eslint_d neovim prettier readability-cli typescript typescript-language-server vscode-html-languageserver-bin"
+    # chroot edit bash -c "npm dedupe"
+    # chroot edit bash -c "cpanm App::cpanoutdated && cpan-outdated -p | cpanm"
+    #
+    # chroot edit bash -c "nala update; nala update; nala install -y obsession && nala clean && apt clean && python${pyversion} -m pip cache purge"
+    #
+    # chroot edit bash -c "systemctl enable startup-items.service"
+    #
+    # sed -i 's| Enrer | Enter |' edit/usr/local/sbin/menu-wireguard
+    # chroot edit bash -c "cd /root; apt -y purge --autoremove xserver-xorg-video-nouveau;"
+    #
+    # rsync -avhc /usr/share/fonts/truetype/AAntiCorona/ edit/usr/share/fonts/truetype/AAntiCorona/
+    # chroot edit bash -c "cd /root; fc-cache -fv;"
     #
 }
 get_apt_updates(){
-    chroot edit bash -c "apt-key adv --refresh-keys --keyserver keyserver.ubuntu.com"
+    # chroot edit bash -c "apt-key adv --refresh-keys --keyserver keyserver.ubuntu.com"
     chroot edit bash -c "apt update; apt update"
     # chroot edit bash -c "cd /root; nala update; nala update; nala upgrade -y; nala upgrade -y;"
     # [[ -n "${rmv_apt_pkg}" ]] && chroot edit bash -c "nala purge -y ${rmv_apt_pkg}"
     # [[ -n "${new_apt_pkg}" ]] && chroot edit bash -c "nala install -y ${new_apt_pkg}"
     # chroot edit bash -c "nala update; nala -y upgrade"
-    chroot edit bash -c "apt -y upgrade --fix-missing; apt -y full-upgrade --fix-missing"
-    chroot edit bash -c "apt -y upgrade --fix-missing; apt -y full-upgrade --fix-missing"
+    chroot edit bash -c "apt -y upgrade; apt -y upgrade --fix-missing"
     chroot edit bash -c "apt -y --fix-broken install"
     # chroot edit bash -c "nala autopurge -y"
     # chroot edit bash -c "nala clean"
@@ -156,15 +178,16 @@ for project in $dirs; do
     # Python version
     [[ $project == "starling" ]] || pyversion="3.8"
     [[ $project == "starling" ]] && pyversion="3.10"
+    [[ $project == "debian" ]] && pyversion="3.11"
     export pyversion
-	cd $project || return
+	cd ${WKDIR}/${project} || return
 	echo -e "\n...Starting work in $project ..."
     # Chroot into the filesystem
-    mount --bind /run edit/run
-    mount --bind /dev edit/dev
-    mount --bind /dev/pts edit/dev/pts
-    mount --bind /proc edit/proc
-    mount --bind /sys edit/sys
+    mount --bind /run ./${RFSCONTENTS}/run
+    mount --bind /dev ./${RFSCONTENTS}/dev
+    mount --bind /dev/pts ./${RFSCONTENTS}/dev/pts
+    mount --bind /proc ./${RFSCONTENTS}/proc
+    mount --bind /sys ./${RFSCONTENTS}/sys
     cp /etc/hosts edit/etc/hosts
     mkdir -p edit/run/systemd/resolve
     echo 'nameserver '${CHROOTDNS}'' > edit/run/systemd/resolve/resolv.conf
@@ -176,29 +199,83 @@ for project in $dirs; do
     $COMMAND
     # clean up before unmounting
     chroot edit bash -c "vers=(7 8 9 10 11); for ver in ${vers[@]};do python3.${ver} -m pip cache purge; done"
-    chroot edit bash -c "nala clean; apt clean; pyclean /usr/lib; pyclean /usr/local/lib"
+    chroot edit bash -c "nala clean; apt clean"
+    #chroot edit bash -c "pyclean /usr/lib; pyclean /usr/local/lib"
     # Unmount after executing the chroot commands
-    umount edit/sys
-    umount edit/proc || umount -lf edit/proc
-    umount edit/dev/pts
-    umount edit/dev
-    umount edit/run
+    umount ./${RFSCONTENTS}/sys
+    umount ./${RFSCONTENTS}/proc || umount -lf edit/proc
+    umount ./${RFSCONTENTS}/dev/pts
+    umount ./${RFSCONTENTS}/dev
+    umount ./${RFSCONTENTS}/run
     # clean up after unmounting
-    rm -f edit/etc/hosts
-    rm -rf edit/root/.[^.]*
-    rm -rf edit/run/systemd/resolve/.[^.]*
-    rm -rf edit/tmp/.[^.]*
-    rm -rf edit/var/cache/apt/.[^.]*
-    rm -rf edit/var/cache/fontconfig/.[^.]*
-    rm -rf edit/var/cache/man/.[^.]*
-    rm -rf edit/var/lib/apt/lists/.[^.]*
-    rm -rf edit/etc/apt/*.save
-    rm -rf edit/etc/apt/sources.list.d/*.save
+    rm -f  ./${RFSCONTENTS}/etc/hosts
+    rm -rf ./${RFSCONTENTS}/root/.[^.]*
+    rm -rf ./${RFSCONTENTS}/run/systemd/resolve/.[^.]*
+    rm -rf ./${RFSCONTENTS}/tmp/.[^.]*
+    rm -rf ./${RFSCONTENTS}/var/cache/apt/.[^.]*
+    rm -rf ./${RFSCONTENTS}/var/cache/fontconfig/.[^.]*
+    rm -rf ./${RFSCONTENTS}/var/cache/man/.[^.]*
+    rm -rf ./${RFSCONTENTS}/var/lib/apt/lists/.[^.]*
+    rm -rf ./${RFSCONTENTS}/etc/apt/*.save
+    rm -rf ./${RFSCONTENTS}/etc/apt/sources.list.d/*.save
     wait
 	echo -e "\n...Finished work in $project ..."
-    cd ..
+    cd ${WKDIR}
 done
 }
+construct(){
+	(cd ${WKDIR}/${1} || return
+	echo -e "\n\n   Starting work in ${1}   "
+    [[ -f "${1}-latest.iso" ]] && \
+    echo -e "\n\nMove ${1}-latest.iso to ${1}-latest.stable.iso\n" && \
+    mv ${1}-latest.iso ${1}-latest.stable.iso
+	./multifunction.sh makedisk
+	echo -e "\n\n...Finished work in ${1}...\n"
+    )
+}
+
+make_copy(){
+    ([[ -f /media/"$(logname)"/${2}/distros/${1}/${1}-latest.iso ]] || exit 1
+    # kill the loop if error
+    trap 'echo "Exited!"; exit;' INT TERM
+    MAX_RETRIES=50
+    x=0
+    # Set initial return value to failure
+    false
+    while [[ $? -ne 0 ]] && [[ $x -lt $MAX_RETRIES ]]; do
+        ((x++))
+        echo -e "\n...Copying $project-latest.iso --isofiles-- Pass $x...\n"
+		rsync -avhc --inplace --no-whole-file --info=progress2 \
+		/media/"$(logname)"/${2}/distros/${1}/${1}-latest.iso \
+        /isodevice/isofiles/${1}-latest.iso;
+        #/media/$username/$destination/isofiles/$project-latest.iso;
+	sha256sum	/media/"$(logname)"/${2}/distros/${1}/${1}-latest.iso \
+        /isodevice/isofiles/${1}-latest.iso;
+    done
+    [[ $x -eq $MAX_RETRIES ]] &&  echo -e "\n\nRetry limit reached\n\n"
+    )
+}
+
+build(){
+    # builds iso images and copies them to the boot partition
+    clear
+    for project in $dirs
+    do
+        export project
+	    construct "$project" #&
+    done
+    clear
+    echo -e "\nn...Builds complete.  Now writing to the boot drive and backup...\n\n"
+
+    for project in $dirs
+    do
+    export project
+    make_copy "$project" "$partition" #&
+    done
+
+    echo -e "\n\n   File copy tasks completed.  Enjoy your new Linux!  \n\n"
+}
+
 OPTIONS="Discrete Commands
 Apt Updates
 Python Install and Remove
@@ -207,7 +284,8 @@ Kernel Upgrade
 Other Updates
 Super Clean
 Pre-Release (Apt,Other, and Clean)
-Remove Snap"
+Remove Snap
+Build ISO Images"
 # Select the desired action
 CHOICE=$(echo -e "$OPTIONS" | fzf --layout=reverse --header=Select: )
 clear
@@ -251,6 +329,9 @@ case "$CHOICE" in
     "Remove Snap")
         COMMAND="remove_snap";
         mounted_work
+        ;;
+    "Build ISO Images")
+        build
         ;;
 esac
 echo "End of work in all projects."
