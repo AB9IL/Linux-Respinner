@@ -6,7 +6,7 @@ These scripts are exactly what I use to remaster both Ubuntu and Debian, debloat
 
 Crack open your favorite livecd and set up a more perfect choice of web browser, bookmarks, desktop, or window manager. The official releases are great, but the bottom line with Linux is that you can make a distro into just about anything you want.
 
-Usage:
+## Usage (multifunction-<distro>.sh):
 
 1) Place in a working directory on a medium large enough to hold the original iso file, the extracted iso contents, and a working linux filesystem (in total, about four times the size of the original iso file).
 2) Edit the paths, username, and other items at the top of the script.
@@ -19,5 +19,7 @@ Usage:
 9) To leave the chroot, execute "exit" and let the script clean up and quit.
 10) Restart the script again, choosing the "makedisk" argument.
 
-The other scripts (build, fixfiles, group-update) are tools for updating or fixing issues en masse, on multiple linux respin projects.
+## Usage (group-update):
+The group-update script now builds the iso files. Edit the variables near the beginning of the script, especially to set "dirs" to contain the project directories to update or build. Set paths as  needed for copying deb packages, kernel files, or other items into your projects, or to delete any items.
 
+**In each project directory, name each multifunction-<distro>.sh script to simply, _multifunction.sh_, as that is the script name the group-updater will try to execute for its tasks.**
