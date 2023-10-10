@@ -63,7 +63,7 @@ extract_ubuntu() {
     [[ -d "utils" ]] || mkdir utils
     [[ -d "$ISOCONTENTS" ]] || mkdir $ISOCONTENTS
     mount -o loop $ISONAME mnt
-    rsync -avhc --inplace --no-whole-file \
+    rsync -avhc --inplace \
         mnt/ ${ISOCONTENTS}/
     find ${ISOCONTENTS}/casper -type f -iname "*.squashfs" \
         -exec unsquashfs -p $PROCNUM -f -d edit {} \;
@@ -83,9 +83,9 @@ extract_ubuntu() {
     (cat $RFSCONTENTS/etc/skel/.xinitrc > utils/.xinitrc) &
     (cat $RFSCONTENTS/etc/skel/.Xresources > utils/.Xresources) &
     wait
-    ([[ -d "$RFSCONTENTS/etc/skel/.local/" ]] && rsync -avhc --inplace --no-whole-file --delete \
+    ([[ -d "$RFSCONTENTS/etc/skel/.local/" ]] && rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.local/ utils/.local/) &
-    ([[ -d "$RFSCONTENTS/etc/skel/.tmux/" ]] && rsync -avhc --inplace --no-whole-file --delete \
+    ([[ -d "$RFSCONTENTS/etc/skel/.tmux/" ]] && rsync -avhc --delete \
         $RFSCONTENTS/etc/skel/.tmux/ utils/.tmux/) &
     write_scripts
 }
@@ -130,23 +130,27 @@ enterchroot() {
     printf '\nGetting prerequisites...'
     #apt install -y squashfs-tools genisoimage syslinux-utils xorriso
     printf '\nBinding directories...'
-    (mount --bind /run $RFSCONTENTS/run) &
-    (mount --bind /dev $RFSCONTENTS/dev) &
-    (mount --bind /dev/pts $RFSCONTENTS/dev/pts) &
-    (mount --bind /proc $RFSCONTENTS/proc) &
-    (mount --bind /sys $RFSCONTENTS/sys) &
+    mount --bind /run ${WKDIR}/${RFSCONTENTS}/run
+    mount --bind /dev ${WKDIR}/${RFSCONTENTS}/dev
+    mount --bind /dev/pts ${WKDIR}/${RFSCONTENTS}/dev/pts
+    mount --bind /proc ${WKDIR}/${RFSCONTENTS}/proc
+    mount --bind /sys ${WKDIR}/${RFSCONTENTS}/sys
     (cp /etc/hosts $RFSCONTENTS/etc/hosts) &
     (mkdir $RFSCONTENTS/run/systemd/resolve) &
+    [[ "$DISTRIBID" == "Debian" ]] || \
     (echo 'nameserver '${CHROOTDNS}'' > $RFSCONTENTS/run/systemd/resolve/resolv.conf) &
+    [[ "$DISTRIBID" == "Debian" ]] || \
     (echo 'nameserver '${CHROOTDNS}'' > $RFSCONTENTS/run/systemd/resolve/stub-resolv.conf) &
+    [[ "$DISTRIBID" == "Debian" ]] && \
+        (echo 'nameserver '${CHROOTDNS}'' > $RFSCONTENTS/etc/resolv.conf) &
     printf '\nChrooting...'
     chroot edit chroot-manager enter
     cd $WKDIR || exit
-    (umount $RFSCONTENTS/run) &
-    (umount $RFSCONTENTS/dev/pts) &
-    (umount $RFSCONTENTS/dev) &
-    (umount $RFSCONTENTS/proc) &
-    (umount $RFSCONTENTS/sys) &
+    umount ${WKDIR}/${RFSCONTENTS}/run
+    umount ${WKDIR}/${RFSCONTENTS}/dev/pts
+    umount ${WKDIR}/${RFSCONTENTS}/dev
+    umount ${WKDIR}/${RFSCONTENTS}/proc
+    umount ${WKDIR}/${RFSCONTENTS}/sys
     (rm -f $RFSCONTENTS/etc/hosts) &
     (rm -rf $RFSCONTENTS/root/.[^.]*) &
     (rm -rf $RFSCONTENTS/run/systemd/resolve/.[^.]*) &
@@ -170,28 +174,26 @@ make_ubuntu_disk() {
     tee $RFSCONTENTS/etc/skel/.bashrc $RFSCONTENTS/root/.bashrc < utils/.bashrc > /dev/null
     tee $RFSCONTENTS/etc/skel/.bash_misc $RFSCONTENTS/root/.bash_misc < utils/.bash_misc > /dev/null
     tee $RFSCONTENTS/etc/skel/.bash_aliases $RFSCONTENTS/root/.bash_aliases < utils/.bash_aliases > /dev/null
-    tee $RFSCONTENTS/etc/skel/.config/dconf/user $RFSCONTENTS/root/.config/dconf/user < utils/user > /dev/null
     tee $RFSCONTENTS/etc/skel/.profile $RFSCONTENTS/root/.profile < utils/.profile > /dev/null
     tee $RFSCONTENTS/etc/skel/.xinitrc $RFSCONTENTS/root/.xinitrc < utils/.xinitrc > /dev/null
     tee $RFSCONTENTS/etc/skel/.Xresources $RFSCONTENTS/root/.Xresources < utils/.Xresources > /dev/null
     tee $RFSCONTENTS/etc/skel/.nanorc $RFSCONTENTS/root/.nanorc < utils/.nanorc > /dev/null
     tee $RFSCONTENTS/etc/skel/.wgetrc $RFSCONTENTS/root/.wgetrc < utils/.wgetrc > /dev/null
+    tee $RFSCONTENTS/etc/skel/.inputrc $RFSCONTENTS/root/.inputrc < utils/.inputrc > /dev/null
+    tee $RFSCONTENTS/etc/skel/.fzf.bash $RFSCONTENTS/root/.fzf.bash < utils/.fzf.bash > /dev/null
+    tee $RFSCONTENTS/etc/skel/.tmux.conf $RFSCONTENTS/root/.tmux.conf < utils/.tmux.conf > /dev/null
     cp -f utils/initctl $RFSCONTENTS/sbin/initctl
-    cp -f utils/.inputrc $RFSCONTENTS/etc/skel/.inputrc
-    cp -f utils/.inputrc-root $RFSCONTENTS/root/.inputrc
-    cp -f $RFSCONTENTS/etc/skel/.fzf.bash $RFSCONTENTS/root/.fzf.bash
-    cp -f $RFSCONTENTS/etc/skel/.tmux.conf $RFSCONTENTS/root/.tmux.conf
-    (rsync -avhc --inplace --no-whole-file --delete \
+    (rsync -avhc --inplace --delete \
+        $RFSCONTENTS/etc/skel/.config/dconf/ $RFSCONTENTS/root/.config/dconf/) &
+    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/rofi/ $RFSCONTENTS/root/.config/rofi/) &
-    (rsync -avhc --inplace --no-whole-file --delete \
+    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/gtk-3.0/ $RFSCONTENTS/root/.config/gtk-3.0/) &
-    (rsync -avhc --inplace --no-whole-file --delete \
+    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/gtk-4.0/ $RFSCONTENTS/root/.config/gtk-4.0/) &
-    (rsync -avhc --inplace --no-whole-file --delete \
+    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/qt5ct/ $RFSCONTENTS/root/.config/qt5ct/) &
-    (rsync -avhc --inplace --no-whole-file --delete \
-        livecd-setup/apps/neovim/nvim-root/ $RFSCONTENTS/root/.config/nvim/) &
-    (rsync -avhc --inplace --no-whole-file --delete \
+    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.tmux/ $RFSCONTENTS/root/.tmux/) &
     wait
 
@@ -290,14 +292,16 @@ mksquashfs edit $ISOCONTENTS/casper/filesystem.squashfs \
 echo -e $(du -sx --block-size=1 edit | cut -f1) | \
     tee $ISOCONTENTS/casper/filesystem.size
 
-#update md5sums
-#filename MD5SUMS for linux Mint, md5sum.txt for Ubuntu derivatives
+#update checksums
 (cd $ISOCONTENTS
-# printf '\nUpdating md5 sums...'
-# rm md5sum.txt
-# grep -v isolinux/boot.cat <(find -type f | xargs -n1 -P0 -I {} md5sum) | \
-#    tee md5sum.txt ../$NEWISO-build.log 2>&1
-cd ../)
+printf '\nUpdating sha512 sums...'
+echo "The file sha512sum.txt contains the sha512 checksums of all files on this medium.
+
+You can verify them automatically with the 'verify-checksums' boot parameter,
+or, manually with: 'sha512sum -c sha512sum.txt'." > sha512sum.README
+rm md5sum.txt MD5SUMS sha256sum.txt sha512sum.txt
+grep -v isolinux/boot.cat <(fd -tf -x sha512sum) | \
+    tee sha512sum.txt ../$NEWISO-build.log 2>&1)
 
 cd $WKDIR || exit
 #remove the old iso file
@@ -340,6 +344,7 @@ xorrisofs -v \
     xorriso -indev $NEWISO.iso -toc -pvd_info | tee -a $NEWISO-build.log 2>&1
     echo -e '\n'${NEWISO}' creation finished'
 }
+
 make_debian_disk() {
     printf '\nCreate %s.iso!' $NEWISO
     printf '\nJumping above root directory, moving files...\n'
@@ -351,17 +356,17 @@ make_debian_disk() {
     tee $RFSCONTENTS/etc/skel/.bashrc $RFSCONTENTS/root/.bashrc < utils/.bashrc > /dev/null
     tee $RFSCONTENTS/etc/skel/.bash_misc $RFSCONTENTS/root/.bash_misc < utils/.bash_misc > /dev/null
     tee $RFSCONTENTS/etc/skel/.bash_aliases $RFSCONTENTS/root/.bash_aliases < utils/.bash_aliases > /dev/null
-    tee $RFSCONTENTS/etc/skel/.config/dconf/user $RFSCONTENTS/root/.config/dconf/user < utils/user > /dev/null
     tee $RFSCONTENTS/etc/skel/.profile $RFSCONTENTS/root/.profile < utils/.profile > /dev/null
     tee $RFSCONTENTS/etc/skel/.xinitrc $RFSCONTENTS/root/.xinitrc < utils/.xinitrc > /dev/null
     tee $RFSCONTENTS/etc/skel/.Xresources $RFSCONTENTS/root/.Xresources < utils/.Xresources > /dev/null
     tee $RFSCONTENTS/etc/skel/.nanorc $RFSCONTENTS/root/.nanorc < utils/.nanorc > /dev/null
     tee $RFSCONTENTS/etc/skel/.wgetrc $RFSCONTENTS/root/.wgetrc < utils/.wgetrc > /dev/null
-    cp -f utils/initctl $RFSCONTENTS/usr/sbin/initctl
-    cp -f utils/.inputrc $RFSCONTENTS/etc/skel/.inputrc
-    cp -f utils/.inputrc-root $RFSCONTENTS/root/.inputrc
-    cp -f $RFSCONTENTS/etc/skel/.fzf.bash $RFSCONTENTS/root/.fzf.bash
-    cp -f $RFSCONTENTS/etc/skel/.tmux.conf $RFSCONTENTS/root/.tmux.conf
+    tee $RFSCONTENTS/etc/skel/.inputrc $RFSCONTENTS/root/.inputrc < utils/.inputrc > /dev/null
+    tee $RFSCONTENTS/etc/skel/.fzf.bash $RFSCONTENTS/root/.fzf.bash < utils/.fzf.bash > /dev/null
+    tee $RFSCONTENTS/etc/skel/.tmux.conf $RFSCONTENTS/root/.tmux.conf < utils/.tmux.conf > /dev/null
+    cp -f utils/initctl $RFSCONTENTS/sbin/initctl
+    (rsync -avhc --inplace --delete \
+        $RFSCONTENTS/etc/skel/.config/dconf/ $RFSCONTENTS/root/.config/dconf/) &
     (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/rofi/ $RFSCONTENTS/root/.config/rofi/) &
     (rsync -avhc --inplace --delete \
@@ -371,14 +376,20 @@ make_debian_disk() {
     (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/qt5ct/ $RFSCONTENTS/root/.config/qt5ct/) &
     (rsync -avhc --inplace --delete \
-        livecd-setup/apps/neovim/nvim-root/ $RFSCONTENTS/root/.config/nvim/) &
-    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.tmux/ $RFSCONTENTS/root/.tmux/) &
     wait
 
 cd $WKDIR || exit
 #set distro identity
 printf '\nSetting distro identity...'
+
+(echo -e '
+## live-config has got the impression it should reset xfce4-panel's settings, after we've set them.
+LIVE_CONFIG_NOCOMPONENTS=xfce4-panel
+## Set our user and host names.
+LIVE_HOSTNAME='${HOST}'
+LIVE_USERNAME='${USERNAME}'
+LIVE_USER_FULLNAME="Debian live user"' > $RFSCONTENTS/etc/live/config.conf) &
 
 (echo -e ${DISTRONAME}' '${VERSION}' \\n \\l\n' > $RFSCONTENTS/etc/issue) &
 
@@ -390,8 +401,7 @@ the exact distribution terms for each program are described in the
 individual files in /usr/share/doc/*/copyright.
 
 '${DISTRONAME}' comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
-applicable law.
-' > $RFSCONTENTS/etc/legal) &
+applicable law.' > $RFSCONTENTS/etc/legal) &
 
 # VERSION_CODENAME must be either MINTCODE or UBUCODE
 (echo -e 'PRETTY_NAME="'${DISTRONAME}' '${VERSION}' ('${UBUCODE}')"
@@ -434,6 +444,7 @@ chmod +x $RFSCONTENTS/etc/update-motd.d/10-help-text) &
 (echo -e ${ISOINFO} > $ISOCONTENTS/.disk/info) &
 
 (echo -e ${DISTROURL} > $ISOCONTENTS/.disk/release_notes_url) &
+wait
 
 #compress filesystem
 printf '\nCompressing filesystem for %s.iso...\n' $NEWISO
@@ -445,11 +456,14 @@ mksquashfs $RFSCONTENTS $ISOCONTENTS/live/filesystem.squashfs \
 # echo -e $(du -sx --block-size=1 edit | cut -f1) | \
 #    tee $ISOCONTENTS/live/filesystem.size
 
-#update md5sums
-#filename MD5SUMS for linux Mint, md5sum.txt for Ubuntu derivatives
+#update checksums
 (cd $ISOCONTENTS
 printf '\nUpdating sha512 sums...'
-rm sha512sum.txt
+echo "The file sha512sum.txt contains the sha512 checksums of all files on this medium.
+
+You can verify them automatically with the 'verify-checksums' boot parameter,
+or, manually with: 'sha512sum -c sha512sum.txt'." > sha512sum.README
+rm md5sum.txt MD5SUMS sha256sum.txt sha512sum.txt
 grep -v isolinux/boot.cat <(fd -tf -x sha512sum) | \
     tee sha512sum.txt ../$NEWISO-build.log 2>&1)
 
@@ -532,13 +546,16 @@ leave(){
     rm /etc/machine-id
     apt autoremove --purge
     apt clean
-    pyclean /usr/lib
-    pyclean /usr/local/lib
     vers=(8 9 10 11)
     for ver in "${vers[@]}";do
         python3."$ver" -m pip cache purge
     done
     printf "\nExiting chroot...\n"
+    umount /run
+    umount /proc || umount -lf /proc
+    umount /sys
+    umount /dev
+    umount /dev/pts
     exit
 }
 
@@ -590,6 +607,8 @@ case "$1" in
 esac
 ' > $RFSCONTENTS/usr/sbin/build-bootfiles
 chmod +x $RFSCONTENTS/usr/sbin/build-bootfiles
+# make script copy "initrd.img" for Debian isos
+[[ "$DISTRIBID" == "Debian" ]] && sed -i 's|~/initrd|initrd.img|' $RFSCONTENTS/usr/sbin/build-bootfiles
 }
 
 extractinitrd() {
@@ -628,8 +647,6 @@ cleanup() {
     (cd "$RFSCONTENTS/var/lib/apt" && fd -H -tf -x rm) &
     (cd "$RFSCONTENTS/var/log" && fd -H -tf -x rm) &
     (cd "$RFSCONTENTS/var/tmp" && fd -H -tf -x rm) &
-    (python3 -m pyclean $RFSCONTENTS/usr) &
-    (python3 -m pyclean $RFSCONTENTS/opt) &
     (cd "$ISOCONTENTS" && fd -H -e TBL -x rm) &
     (cd "$RFSCONTENTS" && fd -H -e dpkg-old -e dpkg-dist -x rm) &
     (cd "$RFSCONTENTS/tmp" && fd -H -tf -x rm) &
@@ -648,10 +665,10 @@ cleanup() {
 syncHTML() {
     # rsync the html folder (READMEs and info for the distro users)
     HTMLPATH="/usr/local/share/html/ livecd-setup/apps/html"
-    rsync -avhc --inplace --no-whole-file --delete /usr/local/share/html/ \
+    rsync -avhc --inplace --delete /usr/local/share/html/ \
         livecd-setup/apps/html/
     chown -R root:root /usr/local/share/html/ livecd-setup/apps/html
-    rsync -avhc --inplace --no-whole-file --delete /usr/local/share/html/ \
+    rsync -avhc --inplace --delete /usr/local/share/html/ \
         edit/usr/local/share/html/
     chown -R root:root edit/usr/local/share/html
 }
@@ -663,7 +680,8 @@ makebackup(){
 }
 
 copydconf(){
-    yes | cp -f /home/$SYSUSER/.config/dconf/user utils/user
+    yes | cp -f /home/$SYSUSER/.config/dconf/user edit/etc/skel/.config/dconf/user
+    chown root:root edit/etc/skel/.config/dconf/user
 }
 
 
