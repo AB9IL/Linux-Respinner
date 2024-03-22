@@ -45,7 +45,7 @@ export RFSCONTENTS='edit' # directory containing the distro root filesystem
 export ISOINFO="$DISTRONAME $VERSION - Release $ARCH ($BUILDDATE)" # data for the .disk/info file in the respun iso
 export PROCNUM=4 # processor cores to use for filesystem extraction / compression
 [[ "$DISTRIBID" == "Debian"  ]] && export MBR_FILE='isohdpfx.bin' # Proper mbr data for Debian isos
-[[ "$DISTRIBID" == "Debian"  ]] || export MBR_FILE='mbr.img' # Proper mbr data for Mint or Ubuntu isos
+[[ "$DISTRIBID" == "Ubuntu"  ]] || export MBR_FILE='mbr.img' # Proper mbr data for Mint or Ubuntu isos
 
 #---DO NOT EDIT BELOW THIS LINE------------------------------------------------
 
