@@ -3,6 +3,7 @@
 
 # exit if not root
 [[ $EUID -ne 0 ]] && echo "You must be root to run this script." && exit
+
 # define the non-root user
 export username="$(logname)"
 
@@ -16,14 +17,25 @@ export WKDIR="$(readlink -f "$(dirname "$0")")"
 export RFSCONTENTS="edit"
 
 # destination directory for booting finished iso file
-export DESTINATION="/isodevice/isofiles"
+export DESTINATION="/media/user/BOOT/isofiles/"
 
 # Go into each project and update packages
 # list of directories holding linux projects
-#export dirs='troutlinux'
-#export dirs='troutlinux grunionlinux carplinux salmonlinux crayfishlinux'
-#export dirs='troutlinux grunionlinux'
-export dirs='troutlinux crayfishlinux'
+#export dirs='backup'
+#export dirs='debian'
+#export dirs='mofolinux'
+#export dirs='respunrhino'
+#export dirs='specialsid'
+#export dirs='skywavelinux'
+#export dirs='catbirdlinux'
+#export dirs='backup debian'
+#export dirs='backup respunrhino'
+#export dirs='catbirdlinux catbirdlinux_cn specialsid'
+#export dirs='catbirdlinux catbirdlinux_cn skywavelinux specialsid'
+#export dirs='catbirdlinux mofolinux skywavelinux specialsid'
+#export dirs='catbirdlinux catbirdlinux_cn debian mofolinux skywavelinux specialsid backup respunrhino'
+#export dirs='catbirdlinux catbirdlinux_cn debian mofolinux skywavelinux'
+#export dirs='catbirdlinux mofolinux skywavelinux'
 
 # apt packages to install and remove
 new_apt_pkg=''
@@ -32,10 +44,11 @@ rmv_apt_pkg=''
 new_python_pkg=''
 rmv_python_pkg=''
 # Kernels
-kernel_path="$WKDIR/zz_kernels"
-older_kernel=''
-rmv_kernel='6.1.28-rt10-x64v3-xanmod1'
-new_kernel='6.1.38-rt12-x64v4-xanmod1'
+kernel_path="${WKDIR}/zz_kernels"
+older_kernel='6.5.11-x64v3-xanmod1'
+ rmv_kernel='6.5.12-x64v3-xanmod1'
+new_kernel='6.6.16-x64v3-xanmod1'
+#new_kernel='6.0.11-x64v2-rt14-xanmod1'
 header_deb="${kernel_path}/linux-headers-${new_kernel}.deb"
 image_deb="${kernel_path}/linux-image-${new_kernel}.deb"
 libc_deb="${kernel_path}/linux-libc-dev_${new_kernel}.deb"
@@ -43,62 +56,297 @@ libc_deb="${kernel_path}/linux-libc-dev_${new_kernel}.deb"
 CHROOTDNS='9.9.9.9' # DNS to use during chroot operation
 
 discrete_commands(){
-    printf "\nHello World\n"
+    printf "\nStarting discrete commands in CHROOT environment...\n"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; apt purge --autoremove -y papirus-icon-theme; gtk-update-icon-cache; nala clean; apt clean;"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; curl https://rclone.org/install.sh | sudo bash;"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; apt purge --autoremove -y arc-theme; nala clean; apt clean;"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; apt purge --autoremove -y ruby-mdl python3-flake8; nala update; nala install -y python3-mypy python3-ruff tidy yamllint; nala clean; apt clean;"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; npm install -g markdownlint stylelint jsonlint eslint-plugin-html @prettier/plugin-xml; ln -sf /usr/bin/mdl /usr/bin/markdownlint"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; npm cache clean -f"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; nala update; nala install -y mypy; nala clean; apt clean;"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; curl -sS https://starship.rs/install.sh | sh"
+    # cp /home/user/Downloads/.gitconfig ${RFSCONTENTS}/etc/skel
+    # chown root:root ${RFSCONTENTS}/etc/skel/.gitconfig
+    # cp ${RFSCONTENTS}/etc/skel/.gitconfig livecd-setup/apps/dotfiles
     # cp $WKDIR/zz_kernels/scripts/sdrpp_ubuntu_focal_amd64.deb ${RFSCONTENTS}/root
     # chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i sdrpp_ubuntu_focal_amd64.deb; rm sdrpp_ubuntu_focal_amd64.deb;"
+    # cp $WKDIR/zz_kernels/scripts/python-migrate ${RFSCONTENTS}/root/
+    # chroot ${RFSCONTENTS} bash -c "cd /root; ./python-migrate; rm python-migrate;"
+    # chroot ${RFSCONTENTS} bash -c "locale-gen en_US.UTF-8"
+    # chroot ${RFSCONTENTS} bash -c "nala update; nala upgrade -y; nala upgrade -y; nala clean; apt clean;"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; rm bat_0.24.0_amd64.deb; ls;"
     # chroot ${RFSCONTENTS} bash -c "rm -rf /usr/share/fonts/{opentype/FuraCode,truetype/FuraCode}; fc-cache -fv"
     # chroot ${RFSCONTENTS} bash -c 'checkppa --delete;'
-    # cp $WKDIR/zz_kernels/protonvpn-stable-release_1.0.3_all.deb ${RFSCONTENTS}/root/proton-release.deb
-    # chroot ${RFSCONTENTS} bash -c 'apt update; apt install -y dnss; apt -y autoremove --purge stubby;'
-    # chroot ${RFSCONTENTS} bash -c 'apt update; apt install -y htop;'
-    # chroot ${RFSCONTENTS} bash -c 'sed -i "15s/.*/DNS=127.0.0.1/" /etc/systemd/resolved.conf'
-    # chroot ${RFSCONTENTS} bash -c 'sed -i "23s/.*/#DNSOverTLS=opportunistic/" /etc/systemd/resolved.conf'
-    # chroot ${RFSCONTENTS} bash -c 'sed -i "2s/.*/nameserver 127.0.0.1/"  /etc/resolvconf/resolv.conf.d/original'
-    # chroot ${RFSCONTENTS} bash -c 'sed -i "25s/.*/supersede domain-name-servers 127.0.0.1;/"  /etc/dhcp/dhclient.conf'
-    # chroot ${RFSCONTENTS} bash -c "apt purge --autoremove ubuntu-advantage-tools ubuntu-wallpapers*"
-    # chroot ${RFSCONTENTS} bash -c "python${pyversion} -m pip cache purge"
-    # freshen node and perl
-    # chroot ${RFSCONTENTS} bash -c "cd /root; npm -g uninstall bash-language-server corepack eslint_d neovim prettier readability-cli tslab typescript typescript-language-server vim-language-server vscode-html-languageserver-bin"
-    # chroot ${RFSCONTENTS} bash -c "cd /root; npm -g install bash-language-server corepack eslint_d neovim prettier readability-cli typescript typescript-language-server vscode-html-languageserver-bin"
-    # chroot ${RFSCONTENTS} bash -c "npm dedupe"
-    # chroot ${RFSCONTENTS} bash -c "cpanm App::cpanoutdated && cpan-outdated -p | cpanm"
+    # chroot ${RFSCONTENTS} bash -c 'python3 -m pip install --upgrade --pre lookatme;'
+    # cp /root/net.downloadhelper.coapp-1.6.3-1_amd64.deb ${RFSCONTENTS}/root/
+    # chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i net.downloadhelper.coapp-1.6.3-1_amd64.deb; rm net.downloadhelper.coapp-1.6.3-1_amd64.deb;"
+    # cp /media/user/MEDIA_2/distros/catbird/livecd-setup/apps/bleachbit_4.6.0-0_all_debian12.deb ${RFSCONTENTS}/root/bleachbit_4.6.0-0_all_debian12.deb
+    # chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i bleachbit_4.6.0-0_all_debian12.deb && echo -e "\n\n\n------------------------- done!!!!!!!!!!!!!!!-----------------------\n\n\n"; rm bleachbit_4.6.0-0_all_debian12.deb;"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -l | grep bleachbit"
+    # chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -l | grep neovim"
+    # cp /root/nvim-linux64.deb ${RFSCONTENTS}/root/
+    # chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i nvim-linux64.deb && echo -e "\n\n\n------------------------- done!!!!!!!!!!!!!!!-----------------------\n\n\n"; rm nvim-linux64.deb;"
+    # cp /root/wezterm-20240203-110809-5046fc22.Debian12.deb ${RFSCONTENTS}/root/
+    # chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i wezterm-20240203-110809-5046fc22.Debian12.deb && rm wezterm-20240203-110809-5046fc22.Debian12.deb"
     #
-    # chroot ${RFSCONTENTS} bash -c "nala update; nala update; nala install -y obsession && nala clean && apt clean && python${pyversion} -m pip cache purge"
+    printf "\nDiscrete commands executed in CHROOT environment.\n"
+}
+fixfiles(){
+    printf "\nExecuting file and directory fixes, NON CHROOT...\n"
+    # cp /etc/default/dnss ${WKDIR}/${project}/edit/etc/default/dnss
+    # cp -af /home/user/.config/xfce4/xfconf/xfce-perchannel-xml/thunar.xml \
+    #    ${WKDIR}/${project}/edit/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/thunar.xml
+    # chown root:root ${WKDIR}/${project}/edit/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/thunar.xml
+    # cp -af ${WKDIR}/${project}/edit/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/thunar.xml \
+    #    ${WKDIR}/${project}/edit/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/thunar.xml
+    # cp -af /root/languages.md ${WKDIR}/${project}/edit/usr/local/share/html/
+    # cp -af /root/languages.md ${WKDIR}/${project}/livecd-setup/apps/html/
+    # cp -arf /usr/share/themes/Gradient-Dark-GTK \
+    #    ${WKDIR}/${project}/edit/usr/share/themes/Gradient-Dark-GTK
+    # cp -arf /usr/share/icons/Infinity-Dark-Icons \
+    #    ${WKDIR}/${project}/edit/usr/share/icons/Infinity-Dark-Icons
+    # sed -i 's|Arc-Dark|Gradient-Dark-GTK|g' ${WKDIR}/${project}/edit/etc/skel/.gtkrc-2.0
+    # sed -i 's|Arc-Dark|Gradient-Dark-GTK|g' ${WKDIR}/${project}/edit/etc/skel/.config/gtk-3.0/settings.ini
+    # sed -i 's|Arc-Dark|Gradient-Dark-GTK|g' ${WKDIR}/${project}/edit/etc/skel/.config/gtk-4.0/settings.ini
+    # sed -i 's|Papirus-Dark|Infinity-Dark-Icons|g' ${WKDIR}/${project}/edit/etc/skel/.gtkrc-2.0
+    # sed -i 's|Papirus-Dark|Infinity-Dark-Icons|g' ${WKDIR}/${project}/edit/etc/skel/.config/gtk-3.0/settings.ini
+    # sed -i 's|Papirus-Dark|Infinity-Dark-Icons|g' ${WKDIR}/${project}/edit/etc/skel/.config/gtk-4.0/settings.ini
+    # sed -i 's|Papirus-Dark|Infinity-Dark-Icons|g' ${WKDIR}/${project}/edit/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml
+    # sed -i 's|Papirus-Dark|Infinity-Dark-Icons|g' ${WKDIR}/${project}/edit/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml
+    # rm ${WKDIR}/${project}/edit/usr/local/bin/powerline-go
+    # rm ${WKDIR}/${project}/edit/usr/local/src/powerline/powerline-go-linux-amd64
+    # cp -arf /root/starship ${WKDIR}/${project}/edit/etc/xdg/
+    # echo 'export STARSHIP_CONFIG="/etc/xdg/starship/starship.toml"' >> ${WKDIR}/${project}/edit/etc/environment
+    # Save the new terminal configuration
+    # rsync -avhc --inplace --delete \
+    #     catbirdlinux/livecd-setup/apps/alacritty/ \
+    #     ${WKDIR}/${project}/livecd-setup/apps/alacritty/
+    # rsync -avhc --inplace --delete \
+    #     /home/user/.config/alacritty/ \
+    #     ${WKDIR}/${project}/edit/etc/skel/.config/alacritty/
+    # chown -R root:root ${WKDIR}/${project}/edit/etc/skel/.config/alacritty
+    # rsync -avhc --inplace --delete \
+    #     ${WKDIR}/${project}/edit/etc/skel/.config/alacritty/ \
+    #     ${WKDIR}/${project}/edit/etc/xdg/alacritty/
     #
-    # chroot ${RFSCONTENTS} bash -c "systemctl enable startup-items.service"
+    # rsync -avhc --inplace --delete \
+    #     catbirdlinux/livecd-setup/apps/wezterm/ \
+    #     ${WKDIR}/${project}/livecd-setup/apps/wezterm/
+    # rsync -avhc --inplace --delete \
+    #     /home/user/.config/wezterm/ \
+    #     ${WKDIR}/${project}/edit/etc/skel/.config/wezterm/
+    # chown -R root:root ${WKDIR}/${project}/edit/etc/skel/.config/wezterm
+    # rsync -avhc --inplace --delete \
+    #     ${WKDIR}/${project}/edit/etc/skel/.config/wezterm/ \
+    #     ${WKDIR}/${project}/edit/etc/xdg/wezterm/
     #
-    # sed -i 's| Enrer | Enter |' ${RFSCONTENTS}/usr/local/sbin/menu-wireguard
-    # chroot ${RFSCONTENTS} bash -c "cd /root; apt -y purge --autoremove xserver-xorg-video-nouveau;"
+    # edit with sed
+    # sed -i 's|"bat |"batcat |g' ${WKDIR}/${project}/livecd-setup/apps/dotfiles/.bash_aliases
+    # sed -i 's|"bat |"batcat |g' ${WKDIR}/${project}/utils/.bash_aliases
+    # sed -i 's|"bat |"batcat |g' ${WKDIR}/${project}/edit/etc/skel/.bash_aliases
+    # sed -i 's|"bat |"batcat |g' ${WKDIR}/${project}/edit/etc/bash.bashrc
     #
-    # rsync -avhc /usr/share/fonts/truetype/AAntiCorona/ ${RFSCONTENTS}/usr/share/fonts/truetype/AAntiCorona/
-    # chroot ${RFSCONTENTS} bash -c "cd /root; fc-cache -fv;"
+    # insert a line after matching text
+    # sed -i --follow-symlinks 's|</title>.*|</title>\n    <meta name="darkreader-lock">|' \
+    #   ${WKDIR}/${project}/edit/usr/local/share/html/*.html
+    # sed -i --follow-symlinks 's|</title>.*|</title>\n    <meta name="darkreader-lock">|' \
+    #   ${WKDIR}/${project}/livecd-setup/apps/html/*.html
     #
+    #  cp -a /usr/local/src/fzf/fzf \
+    #   ${WKDIR}/${project}/edit/usr/local/src/fzf/fzf
+    #
+    #  cp /root/locale-manager \
+    #   ${WKDIR}/${project}/livecd-setup/apps/scripts-testing/
+    #
+    #  cp /root/update-python3-packages \
+    #   ${WKDIR}/${project}/edit/usr/local/bin/
+    #  cp /root/update-python3-packages \
+    #   ${WKDIR}/${project}/livecd-setup/apps/python/update-python3-packages
+    #
+    #  cp ${WKDIR}/${project}/edit/etc/skel/.config/dconf/user \
+    #      ${WKDIR}/${project}/utils/user
+    #
+    ###############################################################################
+    # generic script installer
+    # scriptname="sdrmap"
+    # cp /root/${scriptname} \
+    #     ${WKDIR}/${project}/edit/usr/sbin/
+    # cp /root/${scriptname} \
+    #     ${WKDIR}/${project}/livecd-setup/apps/scripts-testing/
+    #
+    ###############################################################################
+    # generic app launcher copy
+    # applauncher="locale-manager.desktop"
+    # cp /home/user/.local/share/applications/${applauncher} \
+    #     ${WKDIR}/${project}/edit/etc/skel/.local/share/applications/${applauncher}
+    # chown root:root ${WKDIR}/${project}/edit/etc/skel/.local/share/applications/${applauncher}
+    # cp ${WKDIR}/${project}/edit/etc/skel/.local/share/applications/${applauncher} \
+    #     ${WKDIR}/${project}/livecd-setup/apps/launchers/${applauncher}
+    # rsync -avhc --inplace --delete ${WKDIR}/${project}/edit/etc/skel/.local/share/applications/ \
+    #     ${WKDIR}/${project}/utils/.local/share/applications/
+    #
+    ##############################################################################
+    # Update home configs
+    # foldernames="Thunar xfce4"
+    # for folder in $foldernames;do
+    #     rsync -avhc --inplace --delete --mkpath \
+    #         /home/${username}/.config/${folder}/ \
+    #         ${WKDIR}/${project}/edit/etc/skel/.config/${folder}/
+    #     chown -R root:root ${WKDIR}/${project}/edit/etc/skel/.config/${folder}/
+    #     rsync -avhc --inplace --delete --mkpath \
+    #         ${WKDIR}/${project}/edit/etc/skel/.config/${folder}/ \
+    #         ${WKDIR}/${project}/livecd-setup/apps/${folder}/
+    #     # if necessary, configure directory for xdg
+    #     rsync -avhc --inplace --delete --mkpath \
+    #         ${WKDIR}/${project}/edit/etc/skel/.config/${folder}/ \
+    #         ${WKDIR}/${project}/edit/etc/xdg/${folder}/
+    # done
+    #
+    ##############################################################################
+    # Update DWM-Flexipatch
+    #
+    # rsync -avc --inplace --delete /usr/local/src/dwm-flexipatch/ \
+    #   ${WKDIR}/${project}/edit/usr/local/src/dwm-flexipatch/
+    # rsync -avc --inplace --delete /usr/local/src/dwm-flexipatch/ \
+    #   ${WKDIR}/${project}/livecd-setup/apps/dwm-flexipatch/
+    # # save the config patch
+    # # here "flexipatch.new" means fresh code from Git
+    # # here plain "flexipatch" means customized code running in the system
+    # diff -Naru \
+    #   ${WKDIR}/${project}/livecd-setup/apps/dwm-flexipatch.new/config.def.h \
+    #       ${WKDIR}/${project}/livecd-setup/apps/dwm-flexipatch/config.def.h \
+    #           > ${WKDIR}/${project}/livecd-setup/apps/dwm-mypatches/config.patch
+    # # save the flexipatches patch
+    # diff -Naru \
+    #   ${WKDIR}/${project}/livecd-setup/apps/dwm-flexipatch.new/patches.def.h \
+    #       ${WKDIR}/${project}/livecd-setup/apps/dwm-flexipatch/patches.def.h \
+    #           > ${WKDIR}/${project}/livecd-setup/apps/dwm-mypatches/patches.patch
+    #
+    ###############################################################################
+    # Replace Vimwiki with generic markdown notes
+    # cp /usr/local/bin/vimwiki \
+    #   ${WKDIR}/${project}/edit/usr/local/bin/
+    # rsync -avc --inplace --delete /home/${username}/Documents/ \
+    #   ${WKDIR}/${project}/edit/etc/skel/Documents/
+    # chown -R root:root ${WKDIR}/${project}/edit/etc/skel/Documents
+    ###############################################################################
+    # Update Neovim files
+    # rm /home/${username}/.config/nvim/undo/*
+    # rm /home/${username}/.config/nvim/lazy-lock.json
+    # rm /home/${username}/.cache/nvim/*.log
+    # rm /home/${username}/.cache/nvim/luac/*
+    # rm ${WKDIR}/${project}/edit/etc/skel/.cache/nvim/*.log
+    # rm ${WKDIR}/${project}/edit/etc/skel/.cache/nvim/luac/*
+    # rsync -avhc --inplace --delete --mkpath /home/${username}/.local/share/nvim/ \
+    #   ${WKDIR}/${project}/edit/etc/skel/.local/share/nvim/
+    # rsync -avhc --inplace --delete --mkpath /home/${username}/.cache/nvim/ \
+    #   ${WKDIR}/${project}/edit/etc/skel/.cache/nvim/
+    # rsync -avhc --inplace --delete --mkpath /home/${username}/.config/nvim/ \
+    #   ${WKDIR}/${project}/edit/etc/skel/.config/nvim/
+    # rsync -avhc --inplace --delete --mkpath /home/${username}/.local/share/nvim/ \
+    #   ${WKDIR}/${project}/livecd-setup/apps/neovim/skel/.local/share/nvim/
+    # rsync -avhc --inplace --delete --mkpath /home/${username}/.config/nvim/ \
+    #   ${WKDIR}/${project}/livecd-setup/apps/neovim/skel/.config/nvim/
+    # rsync -avhc --inplace --delete --mkpath /etc/xdg/nvim/ \
+    #   ${WKDIR}/${project}/edit/etc/xdg/nvim/
+    # rsync -avhc --inplace --delete --mkpath /etc/xdg/nvim/ \
+    #   ${WKDIR}/${project}/livecd-setup/apps/neovim/nvim-root/
+    # chown -R root:root ${WKDIR}/${project}/edit/etc/skel/.local/share/nvim
+    # chown -R root:root ${WKDIR}/${project}/edit/etc/skel/.cache/nvim
+    # chown -R root:root ${WKDIR}/${project}/edit/etc/skel/.config/nvim
+    # chown -R root:root ${WKDIR}/${project}/livecd-setup/apps/neovim/skel/.local/share/nvim
+    # chown -R root:root ${WKDIR}/${project}/livecd-setup/apps/neovim/skel/.config/nvim
+    ###############################################################################
+    # Update Obsidian files
+    # rsync -avhc --inplace --delete /home/${username}/.config/obsidian/ \
+    #   ${WKDIR}/${project}/edit/etc/skel/.config/obsidian/
+    # rsync -avhc --inplace --delete /home/${username}/.config/obsidian/ \
+    #   ${WKDIR}/${project}/livecd-setup/apps/obsidian/.config/obsidian/
+    # rsync -avhc --inplace --delete /home/${username}/Documents/ \
+    #   ${WKDIR}/${project}/edit/etc/skel/Documents/
+    # rsync -avhc --inplace --delete /home/${username}/Documents/ \
+    #   ${WKDIR}/${project}/livecd-setup/apps/obsidian/Documents/
+    # > ${WKDIR}/${project}/edit/etc/skel/.config/obsidian/obsidian.log
+    # > ${WKDIR}/${project}/edit/etc/skel/.config/obsidian/id
+    # chown -R root:root ${WKDIR}/${project}/edit/etc/skel/.config/obsidian
+    # chown -R root:root ${WKDIR}/${project}/livecd-setup/apps/obsidian/.config/obsidian
+    # chown -R root:root ${WKDIR}/${project}/edit/etc/skel/Documents
+    # chown -R root:root ${WKDIR}/${project}/livecd-setup/apps/obsidian/Documents
+    ###############################################################################
+    # Group update Mozilla / Firefox
+    # rsync -avhc --inplace --delete /home/${username}/.mozilla/ \
+    #   ${WKDIR}/${project}/edit/etc/skel/.mozilla/
+    # rm -rf ${WKDIR}/${project}/edit/etc/skel/.mozilla/firefox/*.default-beta-*/datareporting/archived/*
+    # chown -R root:root ${WKDIR}/${project}/edit/etc/skel/.mozilla
+    # rsync -avhc --inplace --delete ${WKDIR}/${project}/edit/etc/skel/.mozilla/ \
+    #   ${WKDIR}/${project}/livecd-setup/apps/firefox/.mozilla/
+    # rsync -avhc --inplace --delete /home/user/.cache/mozilla/ \
+    #   ${WKDIR}/${project}/edit/etc/skel/.cache/mozilla/
+    # chown -R root:root ${WKDIR}/${project}/edit/etc/skel/.cache/mozilla
+    # rsync -avhc --inplace --delete ${WKDIR}/${project}/edit/etc/skel/.cache/mozilla/ \
+    #   ${WKDIR}/${project}/livecd-setup/apps/firefox/.cache/mozilla/
+    #
+    ###############################################################################
+    # Update SMPlayer
+    # rsync -avhc --inplace --delete /home/${username}/.config/smplayer/ \
+    #   ${WKDIR}/${project}/edit/etc/skel/.config/smplayer/
+    # rsync -avhc --inplace --delete /home/${username}/.config/smplayer/ \
+    #   ${WKDIR}/${project}/livecd-setup/apps/smplayer/
+    # chown -R root:root ${WKDIR}/${project}/edit/etc/skel/.config/smplayer
+    # chown -R root:root ${WKDIR}/${project}/livecd-setup/apps/smplayer
+    #
+    # hide lsp plugin launchers
+    # sed -i '$aHidden=true' ${WKDIR}/${project}/edit/usr/share/applications/in.lsp_plug*.desktop
+    #
+    #
+    ###############################################################################
+    # Update Gimp
+    # rsync -avhc --inplace --delete /home/user/.config/GIMP/ \
+    #   ${WKDIR}/${project}/edit/etc/skel/.config/GIMP/; \
+    # chown -R root:root \
+    #   ${WKDIR}/${project}/edit/etc/skel/.config/GIMP;
+    ###############################################################################
+    # Update Libreoffice
+    #
+    # rsync -avhc --inplace --delete /home/user/.config/libreoffice/ \
+    #   ${WKDIR}/${project}/edit/etc/skel/.config/libreoffice/; \
+    # chown -R root:root \
+    #   ${WKDIR}/${project}/edit/etc/skel/.config/libreoffice;
+    #
+    ###############################################################################
+    # Update Audacity
+    #
+    # rsync -avhc --inplace --delete /home/user/.audacity-data/ \
+    #   ${WKDIR}/${project}/edit/etc/skel/.audacity-data/
+    # chown -R root:root \
+    #   ${WKDIR}/${project}/edit/etc/skel/.audacity-data
+    #
+    ###############################################################################
+    printf "\nFinished file and directory fixes, NON CHROOT....\n"
 }
 get_apt_updates(){
     # chroot ${RFSCONTENTS} bash -c "apt-key adv --refresh-keys --keyserver keyserver.ubuntu.com"
-    chroot ${RFSCONTENTS} bash -c "apt update; apt update"
-    # chroot ${RFSCONTENTS} bash -c "cd /root; nala update; nala update; nala upgrade -y; nala upgrade -y;"
+    # chroot ${RFSCONTENTS} bash -c "apt install -y gimp -t experimental; apt install -y gimp -t experimental"
+      chroot ${RFSCONTENTS} bash -c "cd /root; nala update; nala update; nala upgrade -y; nala upgrade -y;"
     # [[ -n "${rmv_apt_pkg}" ]] && chroot ${RFSCONTENTS} bash -c "nala purge -y ${rmv_apt_pkg}"
     # [[ -n "${new_apt_pkg}" ]] && chroot ${RFSCONTENTS} bash -c "nala install -y ${new_apt_pkg}"
-    # chroot ${RFSCONTENTS} bash -c "nala update; nala -y upgrade"
-    chroot ${RFSCONTENTS} bash -c "apt -y upgrade; apt -y upgrade --fix-missing"
-    chroot ${RFSCONTENTS} bash -c "apt -y --fix-broken install"
-    # chroot ${RFSCONTENTS} bash -c "nala autopurge -y"
-    # chroot ${RFSCONTENTS} bash -c "nala clean"
-    chroot ${RFSCONTENTS} bash -c "apt -y autoremove --purge; apt clean"
+     chroot ${RFSCONTENTS} bash -c "apt upgrade -y; apt --fix-broken install"
+     chroot ${RFSCONTENTS} bash -c "apt -y autoremove --purge; apt clean; nala clean; apt clean"
+     chroot ${RFSCONTENTS} bash -c "dpkg -l | grep '^rc' | awk '{print $2}' | xargs dpkg --purge"
 }
 get_other_updates(){
-    chroot ${RFSCONTENTS} bash -c "cd /root; jupyter lab build"
-    chroot ${RFSCONTENTS} bash -c "cd /root; npm install -g npm@latest"
-    chroot ${RFSCONTENTS} bash -c "cd /root; npm install -g n; n lts; n prune"
-    chroot ${RFSCONTENTS} bash -c "cd /root; npm cache clean -f"
-    chroot ${RFSCONTENTS} bash -c "cd /root; npm update --save/--save-dev -g"
-    chroot ${RFSCONTENTS} bash -c "cd /root; cpan-outdated -p | cpanm"
-    chroot ${RFSCONTENTS} bash -c "cd /root; cpanm Neovim::Ext"
-    chroot ${RFSCONTENTS} bash -c "cd /root; gem update"
-    chroot ${RFSCONTENTS} bash -c "cd /root; gtk-update-icon-cache"
-    chroot ${RFSCONTENTS} bash -c "cd /root; update-desktop-database"
-    chroot ${RFSCONTENTS} bash -c "cd /root; fc-cache -fv"
+    #chroot ${RFSCONTENTS} bash -c "cd /root; jupyter lab build"
+     chroot ${RFSCONTENTS} bash -c "cd /root; npm install -g npm@latest"
+     chroot ${RFSCONTENTS} bash -c "cd /root; npm install -g n; n lts; n prune"
+     chroot ${RFSCONTENTS} bash -c "cd /root; npm cache clean -f"
+     chroot ${RFSCONTENTS} bash -c "cd /root; npm update --save/--save-dev -g"
+     chroot ${RFSCONTENTS} bash -c "cd /root; cpan-outdated -p | cpanm"
+     chroot ${RFSCONTENTS} bash -c "cd /root; cpanm Neovim::Ext"
+     chroot ${RFSCONTENTS} bash -c "cd /root; gem update"
+     chroot ${RFSCONTENTS} bash -c "cd /root; gem cleanup"
+     chroot ${RFSCONTENTS} bash -c "cd /root; gtk-update-icon-cache"
+     chroot ${RFSCONTENTS} bash -c "cd /root; update-desktop-database"
+     chroot ${RFSCONTENTS} bash -c "cd /root; fc-cache -fv"
     #chroot ${RFSCONTENTS} bash -c "cd /usr/local/src; ./getgits.sh"
 }
 kernel_upgrade(){
@@ -112,34 +360,34 @@ kernel_upgrade(){
     cp ${image_deb} ${RFSCONTENTS}/root/kernel_image.deb
     cp ${libc_deb} ${RFSCONTENTS}/root/libc.deb
     chroot ${RFSCONTENTS} bash -c "cd /root; dpkg -i *.deb; exit"
-    [[ -z "${older_kernel}" ]] || chroot ${RFSCONTENTS} apt purge --autoremove *-${older_kernel} -y
-    [[ -z "${rmv_kernel}" ]] || chroot ${RFSCONTENTS} apt purge --autoremove *-${rmv_kernel} -y
+    [[ -z "${older_kernel}" ]] || chroot ${RFSCONTENTS} bash -c "apt purge --autoremove *-${older_kernel} -y"
+    [[ -z "${rmv_kernel}" ]] || chroot ${RFSCONTENTS} bash -c "apt purge --autoremove *-${rmv_kernel} -y"
     chroot ${RFSCONTENTS} bash -c "cd /root; build-bootfiles ${new_kernel}; exit"
     # copy, move, or clean up for Ubuntu
     [[ -d "extract-cd/casper"  ]] && mv ${RFSCONTENTS}/root/initrd extract-cd/casper/initrd
     [[ -d "extract-cd/casper"  ]] && mv ${RFSCONTENTS}/root/vmlinuz extract-cd/casper/vmlinuz
-    # copy, move, or clean up for Ubuntu
-    [[ -d "extract-cd/live"  ]] && [[ -f "${RFSCONTENTS}/boot/initrd.img-${new_kernel}" ]] && rm extract-cd/live/initrd.img-${rmv_kernel}
-    [[ -d "extract-cd/live"  ]] && [[ -f "${RFSCONTENTS}/boot/vmlinuz-${new_kernel}" ]] && rm extract-cd/live/vmlinuz-${rmv_kernel}
-    [[ -d "extract-cd/live"  ]] && cp ${RFSCONTENTS}/boot/initrd.img-${new_kernel} extract-cd/live/initrd.img-${new_kernel}
-    [[ -d "extract-cd/live"  ]] && cp ${RFSCONTENTS}/boot/vmlinuz-${new_kernel} extract-cd/live/vmlinuz-${new_kernel}
-    [[ -d "extract-cd/live"  ]] && mv ${RFSCONTENTS}/root/initrd extract-cd/live/initrd.img
-    [[ -d "extract-cd/live"  ]] && mv ${RFSCONTENTS}/root/vmlinuz extract-cd/live/vmlinuz
-    rm ${RFSCONTENTS}/root/*.deb
+    # copy, move, or clean up for Debian
+    #[[ -d "extract-cd/live"  ]] && cp ${RFSCONTENTS}/root/initrd extract-cd/live/initrd.img-${new_kernel}
+    [[ -d "extract-cd/live"  ]] && cp ${RFSCONTENTS}/root/initrd extract-cd/live/initrd.img
+    #[[ -d "extract-cd/live"  ]] && cp ${RFSCONTENTS}/root/vmlinuz extract-cd/live/vmlinuz-${new_kernel}
+    [[ -d "extract-cd/live"  ]] && cp ${RFSCONTENTS}/root/vmlinuz extract-cd/live/vmlinuz
+    [[ -d "extract-cd/live" && -f "${RFSCONTENTS}/boot/initrd.img-${new_kernel}" ]] && rm extract-cd/live/initrd.img-${rmv_kernel}
+    [[ -d "extract-cd/live" && -f "${RFSCONTENTS}/boot/initrd.img-${new_kernel}" ]] && rm ${RFSCONTENTS}/boot/initrd.img-${rmv_kernel}
+    [[ -d "extract-cd/live" && -f "${RFSCONTENTS}/boot/vmlinuz-${new_kernel}" ]] && rm extract-cd/live/vmlinuz-${rmv_kernel}
+    [[ -d "extract-cd/live" && -f "${RFSCONTENTS}/boot/initrd.img-${new_kernel}" ]] && rm extract-cd/live/initrd.img-${older_kernel}
+    [[ -d "extract-cd/live" && -f "${RFSCONTENTS}/boot/vmlinuz-${new_kernel}" ]] && rm extract-cd/live/vmlinuz-${older_kernel}
+    rm ${RFSCONTENTS}/root/*.deb ${RFSCONTENTS}/root/initrd ${RFSCONTENTS}/root/vmlinuz
     sed -i "s|Linux Kernel ${rmv_kernel}<br>|Linux Kernel ${new_kernel}<br>|" *-latest-dev.log
     sed -i "s|Linux Kernel ${rmv_kernel}</li>|Linux Kernel ${new_kernel}</li>|" *-latest-dev.log
 }
 python_install_remove(){
-    chroot ${RFSCONTENTS} bash -c 'pyclean /usr'
-    chroot ${RFSCONTENTS} bash -c 'pyclean /opt'
     [[ -n "${new_python_pkg}" ]] && chroot ${RFSCONTENTS} bash -c "python${pyversion} -m pip install --upgrade --retries 10 --timeout 60 ${new_python_pkg}"
     [[ -n "${rmv_python_pkg}" ]] && chroot ${RFSCONTENTS} bash -c "python${pyversion} -m pip uninstall -y ${rmv_python_pkg}"
     chroot ${RFSCONTENTS} python${pyversion} -m pip check
 }
 python_update(){
-    chroot ${RFSCONTENTS} bash -c 'pyclean /usr'
-    chroot ${RFSCONTENTS} bash -c 'pyclean /opt'
     chroot ${RFSCONTENTS} bash -c "cd /root; update-python3-packages"
+    chroot ${RFSCONTENTS} bash -c "cd /root; python${pyversion} -m pip cache purge"
     chroot ${RFSCONTENTS} bash -c "cd /root; python${pyversion} -m pip check"
 }
 remove_snap(){
@@ -173,9 +421,17 @@ super_clean(){
     thumbnails.cache \
     vim.history \
     vlc.memory_dump \
-    vlc.mru
+    vlc.mru \
     x11.debug_logs"
     chroot ${RFSCONTENTS} bash -c "echo $list | xargs bleachbit --clean"
+}
+unmounted_work(){
+for project in $dirs; do
+    echo -e "Working in ${project}..."
+    $COMMAND
+    echo -e "Finished in ${project}... \n"
+    cd ${WKDIR}
+done
 }
 mounted_work(){
 for project in $dirs; do
@@ -184,6 +440,7 @@ for project in $dirs; do
     [[ $project == "starling" ]] && pyversion="3.10"
     [[ $project == "debian" ]] && pyversion="3.11"
     export pyversion
+    export project
 	cd ${WKDIR}/${project} || return
 	echo -e "\n...Starting work in $project ..."
     # Chroot into the filesystem
@@ -204,7 +461,6 @@ for project in $dirs; do
     # clean up before unmounting
     chroot ${RFSCONTENTS} bash -c "vers=(7 8 9 10 11); for ver in ${vers[@]};do python3.${ver} -m pip cache purge; done"
     chroot ${RFSCONTENTS} bash -c "nala clean; apt clean"
-    #chroot ${RFSCONTENTS} bash -c "pyclean /usr/lib; pyclean /usr/local/lib"
     # Unmount after executing the chroot commands
     umount ./${RFSCONTENTS}/sys
     umount ./${RFSCONTENTS}/proc || umount -lf ${RFSCONTENTS}/proc
@@ -229,12 +485,16 @@ done
 }
 construct(){
 	(cd ${WKDIR}/${1} || return
-	echo -e "\n\n   Starting work in ${1}   "
-    [[ -f "${1}-latest.iso" ]] && \
-    echo -e "\n\nMove ${1}-latest.iso to ${1}-latest.stable.iso\n" && \
-    mv ${1}-latest.iso ${1}-latest.stable.iso
+	echo -e "\n\nStarting work in ${1}   "
 	./multifunction.sh makedisk
-	echo -e "\n\n...Finished work in ${1}...\n"
+	echo -e "\n\nFinished work in ${1}...\n"
+    )
+}
+ripdata(){
+	(cd ${WKDIR}/${1} || return
+    echo -e "\n\nStarting work in ${1}   "
+    ./multifunction.sh extractiso
+    echo -e "\n\nFinished work in ${1}...\n"
     )
 }
 
@@ -249,15 +509,25 @@ make_copy(){
     while [[ $? -ne 0 ]] && [[ $x -lt $MAX_RETRIES ]]; do
         ((x++))
         echo -e "\n...Copying $project-latest.iso --isofiles-- Pass $x...\n"
-		rsync -avhc --inplace --no-whole-file --info=progress2 \
-		${WKDIR}/${1}/${1}-latest.iso \
-        ${DESTINATION}/${1}-latest.iso;
+        cp -f ${WKDIR}/${1}/${1}-latest.iso ${DESTINATION}/${1}-latest.iso
+		rsync -avhc --inplace --info=progress2 \
+		${WKDIR}/${1}/${1}-latest.iso ${DESTINATION}/${1}-latest.iso
         #/media/$username/$destination/isofiles/$project-latest.iso;
-	sha256sum	${WKDIR}/${1}/${1}-latest.iso \
-        ${DESTINATION}/${1}-latest.iso;
+	sha256sum	${WKDIR}/${1}/${1}-latest.iso ${DESTINATION}/${1}-latest.iso
     done
     [[ $x -eq $MAX_RETRIES ]] &&  echo -e "\n\nRetry limit reached\n\n"
     )
+}
+
+extract(){
+    # rips files from iso images and sets up the customization environmment
+    clear
+    for project in $dirs
+    do
+        export project
+        ripdata "$project"
+    done
+    echo -e "\n\n   ISO data extraction completed. \n\n"
 }
 
 build(){
@@ -273,21 +543,22 @@ build(){
 
     for project in $dirs
     do
-    export project
-    make_copy "$project" #&
+        export project
+        make_copy "$project" #&
     done
 
     echo -e "\n\n   File copy tasks completed.  Enjoy your new Linux!  \n\n"
 }
 
-OPTIONS="Discrete Commands
+OPTIONS="Discrete Commands in CHROOT Environment
+Fix Files or Directories non CHROOT
 Apt Updates
 Python Install and Remove
 Python Update
 Kernel Upgrade
 Other Updates
 Super Clean
-Pre-Release (Apt,Other, and Clean)
+Pre-Release (Apt + Other Updates, then Clean)
 Remove Snap
 Build ISO Images"
 # Select the desired action
@@ -295,9 +566,13 @@ CHOICE=$(echo -e "$OPTIONS" | fzf --layout=reverse --header=Select: )
 clear
 [[ -z "$CHOICE" ]] && echo "No selection made, exiting..." && exit 0
 case "$CHOICE" in
-    "Discrete Commands")
+    "Discrete Commands in CHROOT Environment")
         COMMAND="discrete_commands"
         mounted_work
+        ;;
+    "Fix Files or Directories non CHROOT")
+        COMMAND="fixfiles"
+        unmounted_work
         ;;
     "Apt Updates")
         COMMAND="get_apt_updates"
@@ -324,9 +599,9 @@ case "$CHOICE" in
         mounted_work
         ;;
     "Pre-Release (Apt,Other, and Clean)")
-        COMMAND="get_apt_updates
-        python_update
-        get_other_updates
+        COMMAND="get_apt_updates \
+        python_update \
+        get_other_updates \
         super_clean";
         mounted_work
         ;;
@@ -334,7 +609,12 @@ case "$CHOICE" in
         COMMAND="remove_snap";
         mounted_work
         ;;
+    "Extract ISO Contents")
+        extract
+        ;;
     "Build ISO Images")
+        # COMMAND="super_clean"
+        # mounted_work
         build
         ;;
 esac

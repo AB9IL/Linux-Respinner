@@ -2,7 +2,7 @@
 Encoding=UTF-8
 [[ $EUID -ne 0 ]] && echo "You must be root to run this script." && exit
 
-# Multifunction Linux Distro Respinner Script v0.50.
+# Multifunction Linux Distro Respinner Script v0.80.
 # Copyright (c) 2022 by Philip Collier, github.com/AB9IL
 # Multifunction Linux Distro Respinner setup is free software; you can
 # redistribute it and/or modify it under the terms of the GNU General Public
@@ -16,52 +16,66 @@ Encoding=UTF-8
 # before running this script.  Change SYSUSER and PART to match the
 # current username and partition to match your currently running
 # system, or the paths will be incorrect.
-#>>>  THIS VERSION FOR                     <<<
-#>>>  Debian 12 or UBUNTU 20.10 AND LATER  <<<
+#
+#>>>  THIS VERSION FOR                                 <<<
+#>>>  Debian 12 or any Ubuntu before or after 20.10    <<<
+#>>>  For Ubuntu, be sure to set UBURELEASE variable!! <<<
+
+#apt update
+#apt install -y squashfs-tools genisoimage syslinux-utils xorriso fzf fd-find
 # define variables:
-export WKDIR="$(pwd)" # Working directory for script
+export WKDIR="$(readlink -f "$(dirname "$0")")"
 export BUILDDATE="$(date -u "+%Y%m%e")"
+export RELEASEDATE="$(date -u "+%Y/%m/%d")"
 export SYSUSER="$(logname)" # your username as builder of the respin
-export CHROOTDNS='9.9.9.9' # DNS to use during chroot operation
-export SYSDIR='respunlinux' # the working directory of the respin project
-export ISONAME="$SYSDIR-latest.stable.iso" # the filename for the iso to be extracted
+export CHROOTDNS='1.1.1.1' # DNS to use during chroot operation
+export SYSDIR='respun-rhino' # the working directory of the respin project
+export ISONAME="Rhino-Linux-2023.4-amd64.iso" # the filename for the iso to be extracted
 export ISOCONTENTS='extract-cd' # directory containing the extracted iso contents
 export VERSION='0.1.0' # version number of the respun distro
-export UBURELEASE='22.04' # Release Year.Month for Ubuntu distros
-export UBUCODE='jammy' # Ubuntu or Debian codename
+export UBURELEASE='2023.4' # Release Year.Month for Ubuntu distros (e.g. 23.10)
+export UBUCODE='rhino' # Ubuntu or Debian codename
 export MINTRELEASE=''
 export MINTCODE='' # Mint codename
 export DISTRIBID='Ubuntu' # LinuxMint or Ubuntu or Debian
 export DISTRIBRELEASE=$UBURELEASE # variable for Mint or Ubuntu release
 export DISTRIBCODE=$UBUCODE # variable for Mint or Ubuntu codename
-export NEWISO="$SYSDIR-latest" # filename for the new iso
-export DISTRONAME='Respun Linux' # plain language name for the respun distro
-export DISTROURL='https://respunlinux.com' # url for the respin's web page
-export FLAVOUR='Starling' # /etc/casper.conf flavour
-export HOST='starling' # /etc/casper.conf host in the respun distro
+export NEWISO="$SYSDIR-latest" # filename for the new iso derived from directory name
+export DISTRONAME='Respun Rhino' # plain language name for the respun distro
+export DISTROURL='https://example.com' # url for the respin's web page
+export FLAVOUR='Rhino' # /etc/casper.conf flavour
+export HOST='rhino' # /etc/casper.conf host in the respun distro
 export USERNAME='user' # /etc/casper.conf user in the respun distro
 export ARCH='amd64'
 export RFSCONTENTS='edit' # directory containing the distro root filesystem
 export ISOINFO="$DISTRONAME $VERSION - Release $ARCH ($BUILDDATE)" # data for the .disk/info file in the respun iso
 export PROCNUM=4 # processor cores to use for filesystem extraction / compression
-[[ "$DISTRIBID" == "Debian"  ]] && export MBR_FILE='isohdpfx.bin' # Proper mbr data for Debian isos
-[[ "$DISTRIBID" == "Ubuntu"  ]] || export MBR_FILE='mbr.img' # Proper mbr data for Mint or Ubuntu isos
-[[ "$DISTRIBID" == "Ubuntu"  ]] || export EFI_FILE='efi.img' # efi from original Ubuntu 20.10+ iso
 #---DO NOT EDIT BELOW THIS LINE------------------------------------------------
+[[ $(echo "$UBURELEASE > 20.04" | bc -l) -eq 1 ]] && UBUAGE="new" || UBUAGE="old" # set distro age for Ubuntu Rhino distros
+[[ "$UBUCODE" == "rhino" ]] && UBUAGE="zero" # set distro age for Ubuntu Rhino distros
+[[ "$DISTRIBID" == "Debian"  ]] && export MBR_FILE='isohdpfx.bin' # Proper mbr data for Debian isos
+[[ "$DISTRIBID" == "Debian"  ]] || export MBR_FILE='mbr.img' # Proper mbr data for Mint or Ubuntu isos
+[[ "$DISTRIBID" == "Debian"  ]] || export EFI_FILE='efi.img' # efi from original Ubuntu 20.10+ iso
 
 extract_ubuntu() {
-    #apt update
-    #apt install -y squashfs-tools genisoimage syslinux-utils xorriso
-    # Extract the hybrid MBR template
-    dd if="$ISONAME" bs=1 count=432 of="utils/mbr.img"
-    # Extract EFI partition image
-    skip=$(/sbin/fdisk -l "$ISONAME" | grep -F '.iso2 ' | awk '{print $2}')
-    size=$(/sbin/fdisk -l "$ISONAME" | grep -F '.iso2 ' | awk '{print $4}')
-    dd if="$ISONAME" bs=512 skip="$skip" count="$size" of="utils/efi.img"
-    #
     mkdir mnt
     [[ -d "utils" ]] || mkdir utils
     [[ -d "$ISOCONTENTS" ]] || mkdir $ISOCONTENTS
+    case "$UBUAGE" in
+    new)
+        # Extract the hybrid MBR template
+        dd if="$ISONAME" bs=1 count=432 of="${WKDIR}"/utils/"$MBR_FILE"
+        # Extract EFI partition image
+        skip=$(/sbin/fdisk -l "$ISONAME" | grep -F '.iso2 ' | awk '{print $2}')
+        size=$(/sbin/fdisk -l "$ISONAME" | grep -F '.iso2 ' | awk '{print $4}')
+        dd if="$ISONAME" bs=512 skip="$skip" count="$size" of="${WKDIR}"/utils/"$EFI_FILE"
+        ;;
+    old)
+        # Extract the hybrid MBR template
+        dd if="$ISONAME" bs=1 count=512 of="${WKDIR}"/utils/"$MBR_FILE"
+        ;;
+    esac
+    #
     mount -o loop $ISONAME mnt
     rsync -avhc --inplace \
         mnt/ ${ISOCONTENTS}/
@@ -91,14 +105,12 @@ extract_ubuntu() {
 }
 
 extract_debian() {
-    #apt update
-    #apt install -y squashfs-tools genisoimage syslinux-utils xorriso
     mkdir mnt
     [[ -d "utils" ]] || mkdir utils
     [[ -d "$ISOCONTENTS" ]] || mkdir $ISOCONTENTS
     dd if="$ISONAME" bs=1 count=432 of=utils/"$MBR_FILE"
     mount -o loop $ISONAME mnt
-    rsync -avhc --inplace --no-whole-file \
+    rsync -avhc --inplace \
         mnt/ ${ISOCONTENTS}/
     find ${ISOCONTENTS}/live -type f -iname "*.squashfs" \
         -exec unsquashfs -p $PROCNUM -f -d edit {} \;
@@ -184,6 +196,8 @@ make_ubuntu_disk() {
     tee $RFSCONTENTS/etc/skel/.tmux.conf $RFSCONTENTS/root/.tmux.conf < utils/.tmux.conf > /dev/null
     cp -f utils/initctl $RFSCONTENTS/sbin/initctl
     (rsync -avhc --inplace --delete \
+        $RFSCONTENTS/etc/xdg/nvim/ $RFSCONTENTS/root/.config/nvim/) &
+    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/dconf/ $RFSCONTENTS/root/.config/dconf/) &
     (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/rofi/ $RFSCONTENTS/root/.config/rofi/) &
@@ -195,6 +209,8 @@ make_ubuntu_disk() {
         $RFSCONTENTS/etc/skel/.config/qt5ct/ $RFSCONTENTS/root/.config/qt5ct/) &
     (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.tmux/ $RFSCONTENTS/root/.tmux/) &
+    (fd . $RFSCONTENTS/usr/local/share/html/ \
+        -tf -e html -x sed -i "s|<p>Version: .*; Release Date: .*</p>|<p>Version: ${VERSION}; Release Date: ${RELEASEDATE}</p>|") &
     wait
 
 cd $WKDIR || exit
@@ -272,6 +288,20 @@ UBUNTU_CODENAME="'${UBUCODE}'"' > $RFSCONTENTS/usr/lib/os-release) &
 echo "* Support:  '${DISTROURL}'"' > $RFSCONTENTS/etc/update-motd.d/10-help-text;
 chmod +x $RFSCONTENTS/etc/update-motd.d/10-help-text) &
 
+case "$UBUAGE" in
+    old)
+        (echo -e '#define DISKNAME  '${DISTRONAME}' '${VERSION}'
+#define TYPE  binary
+#define TYPEbinary  1
+#define ARCH  amd64
+#define ARCHamd64  1
+#define DISKNUM  1
+#define DISKNUM1  1
+#define TOTALNUM  0
+#define TOTALNUM0  1' > $ISOCONTENTS/README.diskdefines) &
+    ;;
+esac
+
 (echo -e ${ISOINFO} > $ISOCONTENTS/.disk/info) &
 
 (echo -e ${DISTROURL} > $ISOCONTENTS/.disk/release_notes_url) &
@@ -282,10 +312,21 @@ chmod +w $ISOCONTENTS/casper/filesystem.manifest;
 chroot edit dpkg-query -W --showformat='${Package} ${Version}\n' | \
     tee $ISOCONTENTS/casper/filesystem.manifest $NEWISO-build.log
 
+case "$UBUAGE" in
+    old)
+        cp $ISOCONTENTS/casper/filesystem.manifest $ISOCONTENTS/casper/filesystem.manifest-desktop;
+        sed -i '/ubiquity/d;
+                /casper/d;
+                /discover/d;
+                /laptop-detect/d;
+                /os-prober/d' $ISOCONTENTS/casper/filesystem.manifest-desktop
+        ;;
+esac
+
 #compress filesystem
 printf '\nCompressing filesystem for %s.iso...\n' $NEWISO
 rm $ISOCONTENTS/casper/filesystem.squashfs
-mksquashfs edit $ISOCONTENTS/casper/filesystem.squashfs \
+mksquashfs $RFSCONTENTS $ISOCONTENTS/casper/filesystem.squashfs \
     -comp xz \
     -b 1048576 \
     -processors $PROCNUM
@@ -312,28 +353,77 @@ printf '\nIf exists, delete the old %s.iso...\n' $NEWISO
 printf '\nCreating %s.iso...\n' $NEWISO
 # do not change the order of the xorriso options
 # do not remove repeated xorriso options
-xorrisofs -v \
-    -r -joliet-long -l \
-    -volset "$FLAVOUR$VERSION-$ARCH" \
-    -volid "$FLAVOUR$VERSION-$ARCH" \
-    -o $NEWISO.iso \
-    -iso-level 3 \
-    -partition_offset 16 \
-    --grub2-mbr utils/"$MBR_FILE" \
-    --mbr-force-bootable \
-    -append_partition 2 28732ac11ff8d211ba4b00a0c93ec93b utils/"$EFI_FILE" \
-    -appended_part_as_gpt \
-    -iso_mbr_part_type a2a0d0ebe5b9334487c068b6b72699c7 \
-    -c '/boot.catalog' \
-    -b '/boot/grub/i386-pc/eltorito.img' \
-    -no-emul-boot \
-    -boot-load-size 4 \
-    -boot-info-table \
-    --grub2-boot-info \
-    -eltorito-alt-boot \
-    -e '--interval:appended_partition_2:::' \
-    -no-emul-boot \
-    $ISOCONTENTS 2>&1
+case "$UBUAGE" in
+    zero)
+        xorrisofs -v \
+            -r -joliet-long -l \
+            -volset "$FLAVOUR$VERSION-$ARCH" \
+            -volid "$FLAVOUR$VERSION-$ARCH" \
+            -o $NEWISO.iso \
+            -iso-level 3 \
+            -partition_offset 16 \
+            --grub2-mbr utils/"$MBR_FILE" \
+            --mbr-force-bootable \
+            -append_partition 2 28732ac11ff8d211ba4b00a0c93ec93b utils/"$EFI_FILE" \
+            -appended_part_as_gpt \
+            -iso_mbr_part_type a2a0d0ebe5b9334487c068b6b72699c7 \
+            -c '/isolinux/boot.cat' \
+            -b '/isolinux/isolinux.bin' \
+            -no-emul-boot \
+            -boot-load-size 4 \
+            -boot-info-table \
+            --grub2-boot-info \
+            -eltorito-alt-boot \
+            -e '--interval:appended_partition_2:::' \
+            -no-emul-boot \
+            $ISOCONTENTS | tee -a $NEWISO-build.log 2>&1
+        ;;
+    new)
+        xorrisofs -v \
+            -r -joliet-long -l \
+            -volset "$FLAVOUR$VERSION-$ARCH" \
+            -volid "$FLAVOUR$VERSION-$ARCH" \
+            -o $NEWISO.iso \
+            -iso-level 3 \
+            -partition_offset 16 \
+            --grub2-mbr utils/"$MBR_FILE" \
+            --mbr-force-bootable \
+            -append_partition 2 28732ac11ff8d211ba4b00a0c93ec93b utils/"$EFI_FILE" \
+            -appended_part_as_gpt \
+            -iso_mbr_part_type a2a0d0ebe5b9334487c068b6b72699c7 \
+            -c '/boot.catalog' \
+            -b '/boot/grub/i386-pc/eltorito.img' \
+            -no-emul-boot \
+            -boot-load-size 4 \
+            -boot-info-table \
+            --grub2-boot-info \
+            -eltorito-alt-boot \
+            -e '--interval:appended_partition_2:::' \
+            -no-emul-boot \
+            $ISOCONTENTS | tee -a $NEWISO-build.log 2>&1
+        ;;
+        old)
+            xorrisofs -v \
+            -J -J -joliet-long \
+            -full-iso9660-filenames \
+            -input-charset utf-8 \
+            -rational-rock \
+            -volset "$FLAVOUR$VERSION-$ARCH" \
+            -volid "$FLAVOUR$VERSION-$ARCH" \
+            -o $NEWISO.iso \
+            -isohybrid-mbr utils/$MBR_FILE \
+            -eltorito-boot /isolinux/isolinux.bin \
+            -eltorito-catalog /isolinux/boot.cat \
+            -no-emul-boot \
+            -boot-load-size 4 \
+            -boot-info-table \
+            -eltorito-alt-boot \
+            -e /boot/grub/efi.img \
+            -no-emul-boot \
+            -isohybrid-gpt-basdat \
+            $ISOCONTENTS | tee -a $NEWISO-build.log 2>&1
+        ;;
+esac
 
     # log iso information
     echo -e '\nComputing the SHA256 sum:' | tee -a $NEWISO-build.log 2>&1
@@ -366,6 +456,8 @@ make_debian_disk() {
     tee $RFSCONTENTS/etc/skel/.tmux.conf $RFSCONTENTS/root/.tmux.conf < utils/.tmux.conf > /dev/null
     cp -f utils/initctl $RFSCONTENTS/sbin/initctl
     (rsync -avhc --inplace --delete \
+        $RFSCONTENTS/etc/xdg/nvim/ $RFSCONTENTS/root/.config/nvim/) &
+    (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/dconf/ $RFSCONTENTS/root/.config/dconf/) &
     (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/rofi/ $RFSCONTENTS/root/.config/rofi/) &
@@ -377,6 +469,8 @@ make_debian_disk() {
         $RFSCONTENTS/etc/skel/.config/qt5ct/ $RFSCONTENTS/root/.config/qt5ct/) &
     (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.tmux/ $RFSCONTENTS/root/.tmux/) &
+    (fd . $RFSCONTENTS/usr/local/share/html/ \
+        -tf -e html -x sed -i "s|<p>Version: .*; Release Date: .*</p>|<p>Version: ${VERSION}; Release Date: ${RELEASEDATE}</p>|") &
     wait
 
 cd $WKDIR || exit
@@ -546,7 +640,8 @@ leave(){
     rm /etc/machine-id
     apt autoremove --purge
     apt clean
-    vers=(8 9 10 11)
+    nala clean
+    vers=(8 9 10 11 12)
     for ver in "${vers[@]}";do
         python3."$ver" -m pip cache purge
     done
@@ -636,23 +731,23 @@ cleanup() {
     printf '\nCleaning up...\n'
     umount $RFSCONTENTS/dev
     (chown -R man:root $RFSCONTENTS/var/cache/man) &
-    (cd "$RFSCONTENTS/usr/local" && fd -H -e txt -e conf -e db -e md -e html -x chmod 666) &
-    (cd "$RFSCONTENTS/usr/local/sbin" && fd -H  -e py -e sh -x chmod 755) &
-    (cd "$RFSCONTENTS/usr/local/etc" && fd -H -tf -x chmod 666) &
-    (cd "$RFSCONTENTS/var/cache" && fd -H -e db -e TAG -x chmod 664) &
-    (cd "$RFSCONTENTS/var/log" && fd -H -td -x chmod 755) &
-    (cd "$ISOCONTENTS/isolinux" && fd -H -tf -x chmod 644) &
-    (cd "$RFSCONTENTS/etc/apt/sources.list.d" && fd -H -e save -x rm) &
-    [[ "$DISTRIBID" == "Debian" ]] || (cd "$RFSCONTENTS/var/crash" && fd -H -tf -x rm) &
-    (cd "$RFSCONTENTS/var/lib/apt" && fd -H -tf -x rm) &
-    (cd "$RFSCONTENTS/var/log" && fd -H -tf -x rm) &
-    (cd "$RFSCONTENTS/var/tmp" && fd -H -tf -x rm) &
-    (cd "$ISOCONTENTS" && fd -H -e TBL -x rm) &
-    (cd "$RFSCONTENTS" && fd -H -e dpkg-old -e dpkg-dist -x rm) &
-    (cd "$RFSCONTENTS/tmp" && fd -H -tf -x rm) &
-    (cd "$RFSCONTENTS/home" && fd -H . -x rm -rf) &
-    (cd "$RFSCONTENTS/root" && fd -H . -x rm -rf) &
-    (cd "$RFSCONTENTS/tmp" && fd -H . -x rm -rf) &
+    (fd -H -e TBL . "$ISOCONTENTS" -x rm) &
+    (fd -H -e txt -e conf -e db -e md -e html . "$RFSCONTENTS/usr/local" -x chmod 666) &
+    (fd -H -e py -e sh . "$RFSCONTENTS/usr/local/sbin" -x chmod 755) &
+    (fd -H -tf . "$RFSCONTENTS/usr/local/etc" -x chmod 666) &
+    (fd -H -e db -e TAG . "$RFSCONTENTS/var/cache" -x chmod 664) &
+    (fd -H -td . "$RFSCONTENTS/var/log" -x chmod 755) &
+    (fd -H -tf . "$ISOCONTENTS/isolinux" -x chmod 644) &
+    (fd -H -e save . "$RFSCONTENTS/etc/apt/sources.list.d" -x rm) &
+    [[ "$DISTRIBID" == "Debian" ]] || (fd -H -tf . "$RFSCONTENTS/var/crash" -x rm) &
+    (fd -H -tf . "$RFSCONTENTS/var/lib/apt" -x rm) &
+    (fd -H -tf . "$RFSCONTENTS/var/log" -x rm) &
+    (fd -H -tf . "$RFSCONTENTS/var/tmp" -x rm) &
+    (fd -H -e dpkg-old -e dpkg-dist . "$RFSCONTENTS" -x rm) &
+    (fd -H -tf . "$RFSCONTENTS/tmp" -x rm) &
+    (fd -H . "$RFSCONTENTS/home" -x rm -rf) &
+    (fd -H . "$RFSCONTENTS/root" -x rm -rf) &
+    (fd -H . "$RFSCONTENTS/tmp" -x rm -rf) &
     printf '\nSetting some permissions...\n'
     (chmod 4755 $RFSCONTENTS/usr/bin/pkexec) &
     (chmod 4755 $RFSCONTENTS/usr/bin/sudo) &
@@ -662,26 +757,10 @@ cleanup() {
     wait
 }
 
-syncHTML() {
-    # rsync the html folder (READMEs and info for the distro users)
-    HTMLPATH="/usr/local/share/html/ livecd-setup/apps/html"
-    rsync -avhc --inplace --delete /usr/local/share/html/ \
-        livecd-setup/apps/html/
-    chown -R root:root /usr/local/share/html/ livecd-setup/apps/html
-    rsync -avhc --inplace --delete /usr/local/share/html/ \
-        edit/usr/local/share/html/
-    chown -R root:root edit/usr/local/share/html
-}
-
 makebackup(){
     echo -e '\nCopying '${NEWISO}'.iso to '${NEWISO}'.bak.iso...\n'
     cp -fp $NEWISO.iso $NEWISO.bak.iso
     echo -e '\nBackup job complete...'
-}
-
-copydconf(){
-    yes | cp -f /home/$SYSUSER/.config/dconf/user edit/etc/skel/.config/dconf/user
-    chown root:root edit/etc/skel/.config/dconf/user
 }
 
 
@@ -708,12 +787,6 @@ case "$1" in
     repackinit)
         repackinitrd
         ;;
-    synchtml)
-        syncHTML
-        ;;
-    syncdconf)
-        copydconf
-        ;;
     cleanup)
         cleanup
         ;;
@@ -726,8 +799,6 @@ case "$1" in
     extractiso  Extract filesystem from iso file
     extractinit Extract contents of initrd file
     repackinit  Rebuild initrd from extracted contents
-    synchtml    sync the iso /usr/local/share/html to live system
-    syncdconf   sync the iso dconf to live system
     cleanup     clean cruft and set permissions in the iso filesystem
 
         " >&2
