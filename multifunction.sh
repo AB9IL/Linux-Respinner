@@ -61,6 +61,7 @@ extract_ubuntu() {
     mkdir mnt
     [[ -d "utils" ]] || mkdir utils
     [[ -d "$ISOCONTENTS" ]] || mkdir $ISOCONTENTS
+    [[ -d "$RFSCONTENTS" ]] || mkdir $RFSCONTENTS
     case "$UBUAGE" in
     new)
         # Extract the hybrid MBR template
@@ -80,7 +81,7 @@ extract_ubuntu() {
     rsync -avhc --inplace \
         mnt/ ${ISOCONTENTS}/
     find ${ISOCONTENTS}/casper -type f -iname "*.squashfs" \
-        -exec unsquashfs -p $PROCNUM -f -d edit {} \;
+        -exec unsquashfs -p $PROCNUM -f -d $RFSCONTENTS {} \;
     umount mnt
     rm -rf mnt
     # copy certain files to utils
@@ -108,12 +109,13 @@ extract_debian() {
     mkdir mnt
     [[ -d "utils" ]] || mkdir utils
     [[ -d "$ISOCONTENTS" ]] || mkdir $ISOCONTENTS
+    [[ -d "$RFSCONTENTS" ]] || mkdir $RFSCONTENTS
     dd if="$ISONAME" bs=1 count=432 of=utils/"$MBR_FILE"
     mount -o loop $ISONAME mnt
     rsync -avhc --inplace \
         mnt/ ${ISOCONTENTS}/
     find ${ISOCONTENTS}/live -type f -iname "*.squashfs" \
-        -exec unsquashfs -p $PROCNUM -f -d edit {} \;
+        -exec unsquashfs -p $PROCNUM -f -d $RFSCONTENTS {} \;
     umount mnt
     rm -rf mnt
     # copy certain files to utils
