@@ -51,7 +51,7 @@ export RFSCONTENTS='edit' # directory containing the distro root filesystem
 export ISOINFO="$DISTRONAME $VERSION - Release $ARCH ($BUILDDATE)" # data for the .disk/info file in the respun iso
 export PROCNUM=4 # processor cores to use for filesystem extraction / compression
 #---DO NOT EDIT BELOW THIS LINE------------------------------------------------
-[[ $(echo "$UBURELEASE > 20.04" | bc -l) -eq 1 ]] && UBUAGE="new" || UBUAGE="old" # set distro age for Ubuntu Rhino distros
+[[ -n "$UBURELEASE" ]] && [[ $(echo "$UBURELEASE > 20.04" | bc -l) -eq 1 ]] && UBUAGE="new" || UBUAGE="old" # set distro age for Ubuntu Rhino distros
 [[ "$UBUCODE" == "rhino" ]] && UBUAGE="zero" # set distro age for Ubuntu Rhino distros
 [[ "$DISTRIBID" == "Debian"  ]] && export MBR_FILE='isohdpfx.bin' # Proper mbr data for Debian isos
 [[ "$DISTRIBID" == "Debian"  ]] || export MBR_FILE='mbr.img' # Proper mbr data for Mint or Ubuntu isos
