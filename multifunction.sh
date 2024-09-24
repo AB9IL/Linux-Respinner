@@ -99,9 +99,9 @@ extract_ubuntu() {
     (cat $RFSCONTENTS/etc/skel/.Xresources > utils/.Xresources) &
     wait
     ([[ -d "$RFSCONTENTS/etc/skel/.local/" ]] && rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.local/ utils/.local/) &
-    ([[ -d "$RFSCONTENTS/etc/skel/.tmux/" ]] && rsync -avhc --delete \
-        $RFSCONTENTS/etc/skel/.tmux/ utils/.tmux/) &
+      --mkpath $RFSCONTENTS/etc/skel/.local/ utils/.local/) &
+    ([[ -d "$RFSCONTENTS/etc/skel/.tmux/" ]] && rsync -avhc --inplace --delete \
+      --mkpath $RFSCONTENTS/etc/skel/.tmux/ utils/.tmux/) &
     write_scripts
 }
 
@@ -132,10 +132,10 @@ extract_debian() {
     (cat $RFSCONTENTS/etc/skel/.xinitrc > utils/.xinitrc) &
     (cat $RFSCONTENTS/etc/skel/.Xresources > utils/.Xresources) &
     wait
-    ([[ -d "$RFSCONTENTS/etc/skel/.local/" ]] && rsync -avhc --inplace --no-whole-file --delete \
-        $RFSCONTENTS/etc/skel/.local/ utils/.local/) &
-    ([[ -d "$RFSCONTENTS/etc/skel/.tmux/" ]] && rsync -avhc --inplace --no-whole-file --delete \
-        $RFSCONTENTS/etc/skel/.tmux/ utils/.tmux/) &
+    ([[ -d "$RFSCONTENTS/etc/skel/.local/" ]] && rsync -avhc --inplace --delete \
+      --mkpath $RFSCONTENTS/etc/skel/.local/ utils/.local/) &
+    ([[ -d "$RFSCONTENTS/etc/skel/.tmux/" ]] && rsync -avhc --inplace --delete \
+      --mkpath $RFSCONTENTS/etc/skel/.tmux/ utils/.tmux/) &
     write_scripts
 }
 
@@ -196,6 +196,7 @@ make_ubuntu_disk() {
     tee $RFSCONTENTS/etc/skel/.inputrc $RFSCONTENTS/root/.inputrc < utils/.inputrc > /dev/null
     tee $RFSCONTENTS/etc/skel/.fzf.bash $RFSCONTENTS/root/.fzf.bash < utils/.fzf.bash > /dev/null
     tee $RFSCONTENTS/etc/skel/.tmux.conf $RFSCONTENTS/root/.tmux.conf < utils/.tmux.conf > /dev/null
+    cp -f $RFSCONTENTS/etc/skel/.config/mimeapps.list $RFSCONTENTS/root/.config/mimeapps.list
     cp -f utils/initctl $RFSCONTENTS/sbin/initctl
     (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/xdg/nvim/ $RFSCONTENTS/root/.config/nvim/) &
@@ -209,8 +210,8 @@ make_ubuntu_disk() {
         $RFSCONTENTS/etc/skel/.config/gtk-4.0/ $RFSCONTENTS/root/.config/gtk-4.0/) &
     (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/qt5ct/ $RFSCONTENTS/root/.config/qt5ct/) &
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.tmux/ $RFSCONTENTS/root/.tmux/) &
+    ([[ -d "$RFSCONTENTS/etc/skel/.tmux/" ]] &&  rsync -avhc --inplace --delete \
+      --mkpath $RFSCONTENTS/etc/skel/.tmux/ $RFSCONTENTS/root/.tmux/) &
     (fd . $RFSCONTENTS/usr/local/share/html/ \
         -tf -e html -x sed -i "s|<p>Version: .*; Release Date: .*</p>|<p>Version: ${VERSION}; Release Date: ${RELEASEDATE}</p>|") &
     wait
@@ -326,7 +327,7 @@ case "$UBUAGE" in
 esac
 
 #compress filesystem
-printf '\nCompressing filesystem for %s.iso...\n' $NEWISO
+printf '\nCompressing filesystem for %s.iso %s...\n' $NEWISO $VERSION
 rm $ISOCONTENTS/casper/filesystem.squashfs
 mksquashfs $RFSCONTENTS $ISOCONTENTS/casper/filesystem.squashfs \
     -comp xz \
@@ -456,6 +457,7 @@ make_debian_disk() {
     tee $RFSCONTENTS/etc/skel/.inputrc $RFSCONTENTS/root/.inputrc < utils/.inputrc > /dev/null
     tee $RFSCONTENTS/etc/skel/.fzf.bash $RFSCONTENTS/root/.fzf.bash < utils/.fzf.bash > /dev/null
     tee $RFSCONTENTS/etc/skel/.tmux.conf $RFSCONTENTS/root/.tmux.conf < utils/.tmux.conf > /dev/null
+    cp -f $RFSCONTENTS/etc/skel/.config/mimeapps.list $RFSCONTENTS/root/.config/mimeapps.list
     cp -f utils/initctl $RFSCONTENTS/sbin/initctl
     (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/xdg/nvim/ $RFSCONTENTS/root/.config/nvim/) &
@@ -469,8 +471,8 @@ make_debian_disk() {
         $RFSCONTENTS/etc/skel/.config/gtk-4.0/ $RFSCONTENTS/root/.config/gtk-4.0/) &
     (rsync -avhc --inplace --delete \
         $RFSCONTENTS/etc/skel/.config/qt5ct/ $RFSCONTENTS/root/.config/qt5ct/) &
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.tmux/ $RFSCONTENTS/root/.tmux/) &
+    ([[ -d "$RFSCONTENTS/etc/skel/.tmux/" ]] &&  rsync -avhc --inplace --delete \
+      --mkpath $RFSCONTENTS/etc/skel/.tmux/ $RFSCONTENTS/root/.tmux/) &
     (fd . $RFSCONTENTS/usr/local/share/html/ \
         -tf -e html -x sed -i "s|<p>Version: .*; Release Date: .*</p>|<p>Version: ${VERSION}; Release Date: ${RELEASEDATE}</p>|") &
     wait
@@ -543,7 +545,7 @@ chmod +x $RFSCONTENTS/etc/update-motd.d/10-help-text) &
 wait
 
 #compress filesystem
-printf '\nCompressing filesystem for %s.iso...\n' $NEWISO
+printf '\nCompressing filesystem for %s.iso %s...\n' $NEWISO $VERSION
 rm $ISOCONTENTS/live/filesystem.squashfs
 mksquashfs $RFSCONTENTS $ISOCONTENTS/live/filesystem.squashfs \
     -comp xz \
@@ -643,7 +645,7 @@ leave(){
     apt autoremove --purge
     apt clean
     nala clean
-    vers=(8 9 10 11 12)
+    vers=(8 9 10 11 12 13)
     for ver in "${vers[@]}";do
         python3."$ver" -m pip cache purge
     done
