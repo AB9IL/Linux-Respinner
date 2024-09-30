@@ -50,9 +50,14 @@ export ARCH='amd64'
 export RFSCONTENTS='edit' # directory containing the distro root filesystem
 export ISOINFO="$DISTRONAME $VERSION - Release $ARCH ($BUILDDATE)" # data for the .disk/info file in the respun iso
 export PROCNUM=4 # processor cores to use for filesystem extraction / compression
+export xdgdirs="alacritty nvim Thunar wezterm" # XDG directories copied to root configs
+export homedirs="dconf rofi gtk-3.0 gtk-4.0 qt5ct" # user configs copied to root configs
+export dotfiles=".bashrc .bash_misc .bash_aliases .profile .xinitrc .Xresources .nanorc .wgetrc .inputrc .fzf.bash .tmux.conf"
+export homefiles="mimeapps.list" # single files to copy from user config folder
+
 #---DO NOT EDIT BELOW THIS LINE------------------------------------------------
-[[ -n "$UBURELEASE" ]] && [[ $(echo "$UBURELEASE > 20.04" | bc -l) -eq 1 ]] && UBUAGE="new" || UBUAGE="old" # set distro age for Ubuntu Rhino distros
-[[ "$UBUCODE" == "rhino" ]] && UBUAGE="zero" # set distro age for Ubuntu Rhino distros
+[[ -n "$UBURELEASE" ]] && [[ $(echo "$UBURELEASE > 20.04" | bc -l) -eq 1 ]] && UBUAGE="new" || UBUAGE="old"
+[[ "$UBUCODE" == "rhino" ]] && UBUAGE="zero"
 [[ "$DISTRIBID" == "Debian"  ]] && export MBR_FILE='isohdpfx.bin' # Proper mbr data for Debian isos
 [[ "$DISTRIBID" == "Debian"  ]] || export MBR_FILE='mbr.img' # Proper mbr data for Mint or Ubuntu isos
 [[ "$DISTRIBID" == "Debian"  ]] || export EFI_FILE='efi.img' # efi from original Ubuntu 20.10+ iso
@@ -86,17 +91,9 @@ extract_ubuntu() {
     rm -rf mnt
     # copy certain files to utils
     (cat $RFSCONTENTS/sbin/initctl > utils/initctl) &
-    (cat $RFSCONTENTS/etc/skel/.bashrc > utils/.bashrc) &
-    (cat $RFSCONTENTS/etc/skel/.bash_misc > utils/.bash_misc) &
-    (cat $RFSCONTENTS/etc/skel/.bash_aliases > utils/.bash_aliases) &
-    (cat $RFSCONTENTS/etc/skel/.config/dconf/user > utils/user) &
-    (cat $RFSCONTENTS/etc/skel/.inputrc > utils/.inputrc) &
-    (cat $RFSCONTENTS/etc/skel/.nanorc > utils/.nanorc) &
-    (cat $RFSCONTENTS/etc/skel/.profile > utils/.profile) &
-    (cat $RFSCONTENTS/etc/skel/.tmux.conf > utils/.tmux.conf) &
-    (cat $RFSCONTENTS/etc/skel/.wgetrc > utils/.wgetrc) &
-    (cat $RFSCONTENTS/etc/skel/.xinitrc > utils/.xinitrc) &
-    (cat $RFSCONTENTS/etc/skel/.Xresources > utils/.Xresources) &
+    for onefile in $dotfiles; do
+        cat $RFSCONTENTS/etc/skel/"$onefile" > utils/"$onefile" &
+    done
     wait
     ([[ -d "$RFSCONTENTS/etc/skel/.local/" ]] && rsync -avhc --inplace --delete \
       --mkpath $RFSCONTENTS/etc/skel/.local/ utils/.local/) &
@@ -120,17 +117,9 @@ extract_debian() {
     rm -rf mnt
     # copy certain files to utils
     (cat $RFSCONTENTS/sbin/initctl > utils/initctl) &
-    (cat $RFSCONTENTS/etc/skel/.bashrc > utils/.bashrc) &
-    (cat $RFSCONTENTS/etc/skel/.bash_misc > utils/.bash_misc) &
-    (cat $RFSCONTENTS/etc/skel/.bash_aliases > utils/.bash_aliases) &
-    (cat $RFSCONTENTS/etc/skel/.config/dconf/user > utils/user) &
-    (cat $RFSCONTENTS/etc/skel/.inputrc > utils/.inputrc) &
-    (cat $RFSCONTENTS/etc/skel/.nanorc > utils/.nanorc) &
-    (cat $RFSCONTENTS/etc/skel/.profile > utils/.profile) &
-    (cat $RFSCONTENTS/etc/skel/.tmux.conf > utils/.tmux.conf) &
-    (cat $RFSCONTENTS/etc/skel/.wgetrc > utils/.wgetrc) &
-    (cat $RFSCONTENTS/etc/skel/.xinitrc > utils/.xinitrc) &
-    (cat $RFSCONTENTS/etc/skel/.Xresources > utils/.Xresources) &
+    for onefile in $dotfiles; do
+        cat $RFSCONTENTS/etc/skel/"$onefile" > utils/"$onefile" &
+    done
     wait
     ([[ -d "$RFSCONTENTS/etc/skel/.local/" ]] && rsync -avhc --inplace --delete \
       --mkpath $RFSCONTENTS/etc/skel/.local/ utils/.local/) &
@@ -185,35 +174,28 @@ make_ubuntu_disk() {
     mkdir -p $RFSCONTENTS/root/.config/dconf
     mkdir -p $RFSCONTENTS/var/cache/apt/{archives,partial}
     touch $RFSCONTENTS/var/cache/apt/archives/lock
-    tee $RFSCONTENTS/etc/skel/.bashrc $RFSCONTENTS/root/.bashrc < utils/.bashrc > /dev/null
-    tee $RFSCONTENTS/etc/skel/.bash_misc $RFSCONTENTS/root/.bash_misc < utils/.bash_misc > /dev/null
-    tee $RFSCONTENTS/etc/skel/.bash_aliases $RFSCONTENTS/root/.bash_aliases < utils/.bash_aliases > /dev/null
-    tee $RFSCONTENTS/etc/skel/.profile $RFSCONTENTS/root/.profile < utils/.profile > /dev/null
-    tee $RFSCONTENTS/etc/skel/.xinitrc $RFSCONTENTS/root/.xinitrc < utils/.xinitrc > /dev/null
-    tee $RFSCONTENTS/etc/skel/.Xresources $RFSCONTENTS/root/.Xresources < utils/.Xresources > /dev/null
-    tee $RFSCONTENTS/etc/skel/.nanorc $RFSCONTENTS/root/.nanorc < utils/.nanorc > /dev/null
-    tee $RFSCONTENTS/etc/skel/.wgetrc $RFSCONTENTS/root/.wgetrc < utils/.wgetrc > /dev/null
-    tee $RFSCONTENTS/etc/skel/.inputrc $RFSCONTENTS/root/.inputrc < utils/.inputrc > /dev/null
-    tee $RFSCONTENTS/etc/skel/.fzf.bash $RFSCONTENTS/root/.fzf.bash < utils/.fzf.bash > /dev/null
-    tee $RFSCONTENTS/etc/skel/.tmux.conf $RFSCONTENTS/root/.tmux.conf < utils/.tmux.conf > /dev/null
-    cp -f $RFSCONTENTS/etc/skel/.config/mimeapps.list $RFSCONTENTS/root/.config/mimeapps.list
     cp -f utils/initctl $RFSCONTENTS/sbin/initctl
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/xdg/nvim/ $RFSCONTENTS/root/.config/nvim/) &
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.config/dconf/ $RFSCONTENTS/root/.config/dconf/) &
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.config/rofi/ $RFSCONTENTS/root/.config/rofi/) &
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.config/gtk-3.0/ $RFSCONTENTS/root/.config/gtk-3.0/) &
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.config/gtk-4.0/ $RFSCONTENTS/root/.config/gtk-4.0/) &
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.config/qt5ct/ $RFSCONTENTS/root/.config/qt5ct/) &
-    ([[ -d "$RFSCONTENTS/etc/skel/.tmux/" ]] &&  rsync -avhc --inplace --delete \
-      --mkpath $RFSCONTENTS/etc/skel/.tmux/ $RFSCONTENTS/root/.tmux/) &
-    (fd . $RFSCONTENTS/usr/local/share/html/ \
-        -tf -e html -x sed -i "s|<p>Version: .*; Release Date: .*</p>|<p>Version: ${VERSION}; Release Date: ${RELEASEDATE}</p>|") &
+    # copy dotfiles
+    for onefile in $dotfiles; do
+        tee $RFSCONTENTS/etc/skel/"$onefile" $RFSCONTENTS/root/"$onefile" < utils/"$onefile" > /dev/null &
+    done
+    # copy config files
+    for newconf in $homefiles; do
+        cp -f $RFSCONTENTS/etc/skel/.config/"$newconf" $RFSCONTENTS/root/.config/"$newconf" &
+    done
+    # copy config directories
+    for newdir in $xdgdirs; do
+        rsync -avhc --inplace --delete --mkpath \
+           $RFSCONTENTS/etc/xdg/"$newdir"/ $RFSCONTENTS/root/.config/"$newdir"/ &
+    done
+    # copy more config directories
+    for newdir in $homedirs; do
+        rsync -avhc --inplace --delete --mkpath \
+           $RFSCONTENTS/etc/skel/.config/"$newdir"/ $RFSCONTENTS/root/.config/"$newdir"/ &
+    done
+    # update the html readme file
+    fd . $RFSCONTENTS/usr/local/share/html/ \
+        -tf -e html -x sed -i "s|<p>Version: .*; Release Date: .*</p>|<p>Version: ${VERSION}; Release Date: ${RELEASEDATE}</p>|" &
     wait
 
 cd $WKDIR || exit
@@ -327,7 +309,7 @@ case "$UBUAGE" in
 esac
 
 #compress filesystem
-printf '\nCompressing filesystem for %s.iso %s...\n' $NEWISO $VERSION
+printf '\nCompressing filesystem for %s.iso version %s...\n' $NEWISO $VERSION
 rm $ISOCONTENTS/casper/filesystem.squashfs
 mksquashfs $RFSCONTENTS $ISOCONTENTS/casper/filesystem.squashfs \
     -comp xz \
@@ -446,35 +428,28 @@ make_debian_disk() {
     mkdir -p $RFSCONTENTS/root/.config/dconf
     mkdir -p $RFSCONTENTS/var/cache/apt/{archives,partial}
     touch $RFSCONTENTS/var/cache/apt/archives/lock
-    tee $RFSCONTENTS/etc/skel/.bashrc $RFSCONTENTS/root/.bashrc < utils/.bashrc > /dev/null
-    tee $RFSCONTENTS/etc/skel/.bash_misc $RFSCONTENTS/root/.bash_misc < utils/.bash_misc > /dev/null
-    tee $RFSCONTENTS/etc/skel/.bash_aliases $RFSCONTENTS/root/.bash_aliases < utils/.bash_aliases > /dev/null
-    tee $RFSCONTENTS/etc/skel/.profile $RFSCONTENTS/root/.profile < utils/.profile > /dev/null
-    tee $RFSCONTENTS/etc/skel/.xinitrc $RFSCONTENTS/root/.xinitrc < utils/.xinitrc > /dev/null
-    tee $RFSCONTENTS/etc/skel/.Xresources $RFSCONTENTS/root/.Xresources < utils/.Xresources > /dev/null
-    tee $RFSCONTENTS/etc/skel/.nanorc $RFSCONTENTS/root/.nanorc < utils/.nanorc > /dev/null
-    tee $RFSCONTENTS/etc/skel/.wgetrc $RFSCONTENTS/root/.wgetrc < utils/.wgetrc > /dev/null
-    tee $RFSCONTENTS/etc/skel/.inputrc $RFSCONTENTS/root/.inputrc < utils/.inputrc > /dev/null
-    tee $RFSCONTENTS/etc/skel/.fzf.bash $RFSCONTENTS/root/.fzf.bash < utils/.fzf.bash > /dev/null
-    tee $RFSCONTENTS/etc/skel/.tmux.conf $RFSCONTENTS/root/.tmux.conf < utils/.tmux.conf > /dev/null
-    cp -f $RFSCONTENTS/etc/skel/.config/mimeapps.list $RFSCONTENTS/root/.config/mimeapps.list
     cp -f utils/initctl $RFSCONTENTS/sbin/initctl
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/xdg/nvim/ $RFSCONTENTS/root/.config/nvim/) &
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.config/dconf/ $RFSCONTENTS/root/.config/dconf/) &
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.config/rofi/ $RFSCONTENTS/root/.config/rofi/) &
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.config/gtk-3.0/ $RFSCONTENTS/root/.config/gtk-3.0/) &
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.config/gtk-4.0/ $RFSCONTENTS/root/.config/gtk-4.0/) &
-    (rsync -avhc --inplace --delete \
-        $RFSCONTENTS/etc/skel/.config/qt5ct/ $RFSCONTENTS/root/.config/qt5ct/) &
-    ([[ -d "$RFSCONTENTS/etc/skel/.tmux/" ]] &&  rsync -avhc --inplace --delete \
-      --mkpath $RFSCONTENTS/etc/skel/.tmux/ $RFSCONTENTS/root/.tmux/) &
-    (fd . $RFSCONTENTS/usr/local/share/html/ \
-        -tf -e html -x sed -i "s|<p>Version: .*; Release Date: .*</p>|<p>Version: ${VERSION}; Release Date: ${RELEASEDATE}</p>|") &
+    # copy dotfiles
+    for onefile in $dotfiles; do
+        tee $RFSCONTENTS/etc/skel/"$onefile" $RFSCONTENTS/root/"$onefile" < utils/"$onefile" > /dev/null &
+    done
+    # copy config files
+    for newconf in $homefiles; do
+        cp -f $RFSCONTENTS/etc/skel/.config/"$newconf" $RFSCONTENTS/root/.config/"$newconf" &
+    done
+    # copy config directories
+    for newdir in $xdgdirs; do
+        rsync -avhc --inplace --delete --mkpath \
+           $RFSCONTENTS/etc/xdg/"$newdir"/ $RFSCONTENTS/root/.config/"$newdir"/ &
+    done
+    # copy more config directories
+    for newdir in $homedirs; do
+        rsync -avhc --inplace --delete --mkpath \
+           $RFSCONTENTS/etc/skel/.config/"$newdir"/ $RFSCONTENTS/root/.config/"$newdir"/ &
+    done
+    # update the html readme file
+    fd . $RFSCONTENTS/usr/local/share/html/ \
+        -tf -e html -x sed -i "s|<p>Version: .*; Release Date: .*</p>|<p>Version: ${VERSION}; Release Date: ${RELEASEDATE}</p>|" &
     wait
 
 cd $WKDIR || exit
@@ -545,7 +520,7 @@ chmod +x $RFSCONTENTS/etc/update-motd.d/10-help-text) &
 wait
 
 #compress filesystem
-printf '\nCompressing filesystem for %s.iso %s...\n' $NEWISO $VERSION
+printf '\nCompressing filesystem for %s.iso version %s...\n' $NEWISO $VERSION
 rm $ISOCONTENTS/live/filesystem.squashfs
 mksquashfs $RFSCONTENTS $ISOCONTENTS/live/filesystem.squashfs \
     -comp xz \
@@ -745,6 +720,7 @@ cleanup() {
     (fd -H -e save . "$RFSCONTENTS/etc/apt/sources.list.d" -x rm) &
     [[ "$DISTRIBID" == "Debian" ]] || (fd -H -tf . "$RFSCONTENTS/var/crash" -x rm) &
     (fd -H -tf . "$RFSCONTENTS/var/lib/apt" -x rm) &
+    (fd -H -tf . "$RFSCONTENTS/var/cache/apt" -x rm) &
     (fd -H -tf . "$RFSCONTENTS/var/log" -x rm) &
     (fd -H -tf . "$RFSCONTENTS/var/tmp" -x rm) &
     (fd -H -e dpkg-old -e dpkg-dist . "$RFSCONTENTS" -x rm) &
