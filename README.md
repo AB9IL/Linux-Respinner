@@ -24,7 +24,7 @@ multifunction.sh <task>
 4. The UBUCODE variable is also important. Set to "focal", "lunar", as appropriate. For Rhino Linux, "rhino" is correct.
 5. Make the script executable.
 6. Run as root in a terminal; use the "extractiso" argument to rip the iso data.
-7. Restart the respinner script, with "chroot" argument.
+7. Restart the multifunction script, with "chroot" argument.
 8. When in the chroot environment, update, install, or remove software.
 9. You can also add or delete files directly in the root file system directory.
 10. To leave the chroot, execute "exit" and let the script clean up and quit.
@@ -36,12 +36,12 @@ multifunction.sh <task>
 group-update
 ```
 
-1. Select the desired task from the menu (apt update, extract iso content, build a new iso, etc)
-2. Manually edit the project dirs to activate for the current task.
-3. Manually edit the function for directly fixing files with no chroot environment.
-4. Manually edit the function for executing discrete tasks within the chroot environment.
+1. Manually edit the project dirs to activate for the current task.
+2. Manually edit the function for directly fixing files with no chroot environment.
+3. Manually edit the function for executing discrete tasks within the chroot environment.
+4. Run the group updater, select the desired task from the menu (apt update, extract iso content, build a new iso, etc)
 5. For safety, comment out the project dirs, discrete tasks, and file fixes when you finish a set of tasks.
 
 The group-update script is a centralized management tool for one or many iso respin projects. Edit the variables near the beginning of the script, especially to set paths and "dirs" for the project directories. Set paths as needed for copying deb packages, kernel files, or other items into your projects, or to delete any items.
 
-**In each project directory, place _multifunction.sh_ and the original distro iso which will be extracted and respun. The group-update script will cd into each project and execute multifunction.sh for its various tasks.**
+**In each project directory, place _multifunction.sh_ and set a proper path to the distro iso which will be extracted and respun. Consider copying the original into the project directory. The group-update script will cd into each project and execute multifunction.sh for its various tasks.**
